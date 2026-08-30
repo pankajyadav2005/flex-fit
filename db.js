@@ -26,4 +26,13 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id)
   )
 `);
+db.exec(`
+  CREATE TABLE IF NOT EXISTS weight_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    weight REAL NOT NULL,
+    logged_at DATE DEFAULT CURRENT_DATE,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  )
+`);
 module.exports = db;

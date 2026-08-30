@@ -360,3 +360,106 @@ body {
   cursor: pointer;
   margin-top: 6px;
 }
+
+/* PROGRESS PAGE */
+.progress-page {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.progress-header h1 {
+  margin: 0 0 4px;
+}
+
+.progress-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.stat-card h3 {
+  margin: 0 0 12px;
+  font-size: 15px;
+}
+
+.stat-card canvas {
+  max-height: 220px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.summary-box {
+  background: #faf6f1;
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+
+.summary-num {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.summary-label {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+}
+
+/* MODAL */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-overlay.hidden {
+  display: none;
+}
+
+.modal-box {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  width: 320px;
+}
+
+.modal-box h3 {
+  margin-top: 0;
+}
+
+.modal-box input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e5e0da;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+#weight-message {
+  color: #e8623d;
+  font-size: 13px;
+}

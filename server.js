@@ -154,6 +154,36 @@ app.post('/api/profile', requireLogin, (req, res) => {
   res.json({ message: 'Profile saved' });
 });
 
+// GET all weight logs for the current user, oldest first
+app.get('/api/weight', requireLogin, (req, res) => {
+  const logs = db.prepare('SELECT * FROM weight_logs WHERE user_id = ? ORDER BY logged_at ASC').all(req.currentUserId);
+  res.json(logs);
+});
+
+// POST a new weight entry
+app.post('/api/weight', requireLogin, (req, res) => {
+  const { weight } = req.body;
+
+  if (!weight || isNaN(weight) || weight < 20 || weight > 300) {
+    return res.status(400).json({ error: 'Enter a valid weight (20-300 kg)' });
+  }
+
+  db.prepare('INSERT INTO weight_logs (user_id, weight) VALUES (?, ?)').run(req.currentUserId, weight);
+  res.json({ message: 'Weight logged' });
+});
+
+// GET summary stats for the Progress page
+app.get('/api/summary', requireLogin, (req, res) => {
+  const weightCount = db.prepare('SELECT COUNT(*) as count FROM weight_logs WHERE user_id = ?').get(req.currentUserId).count;
+
+  res.json({
+    totalWorkouts: 0,      // will connect once Workout page exists
+    completedWorkouts: 0,  // will connect once Workout page exists
+    caloriesBurned: 0,     // will connect once Cardio page exists
+    weightEntries: weightCount
+  });
+});
+
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`FlexFit server running at http://localhost:${PORT}`);

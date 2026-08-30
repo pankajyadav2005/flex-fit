@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FlexFit - Progress</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <div class="app-layout">
+
+    <div class="sidebar">
+      <div class="sidebar-logo">🏋️ FlexFit AI</div>
+      <nav class="sidebar-nav">
+        <a href="/dashboard.html">📊 Dashboard</a>
+        <a href="/workout.html">🏋️ Workout</a>
+        <a href="/food.html">🍽️ Food</a>
+        <a href="/cardio.html">📈 Cardio</a>
+        <a href="/jiya.html">💬 Jiya AI</a>
+        <a href="/progress.html" class="active">📈 Progress</a>
+        <a href="/profile.html">👤 Profile</a>
+      </nav>
+      <a href="#" class="sidebar-signout" onclick="signOut()">↩ Sign Out</a>
+    </div>
+
+    <div class="main-content">
+      <div class="progress-page">
+
+        <div class="progress-header">
+          <div>
+            <h1>Progress</h1>
+            <p class="subtext">Weight, output and consistency over time.</p>
+          </div>
+          <button class="btn-primary" onclick="openLogWeight()">+ Log Weight</button>
+        </div>
+
+        <div class="progress-grid">
+
+          <div class="stat-card">
+            <h3>Weight history</h3>
+            <canvas id="weightChart"></canvas>
+          </div>
+
+          <div class="stat-card">
+            <h3>Calories burned — 14 days</h3>
+            <canvas id="caloriesChart"></canvas>
+          </div>
+
+          <div class="stat-card">
+            <h3>Workout consistency — 8 weeks</h3>
+            <canvas id="consistencyChart"></canvas>
+          </div>
+
+          <div class="stat-card">
+            <h3>Summary</h3>
+            <div class="summary-grid">
+              <div class="summary-box">
+                <div class="summary-num" id="sum-workouts">0</div>
+                <div class="summary-label">Total workouts</div>
+              </div>
+              <div class="summary-box">
+                <div class="summary-num" id="sum-completed">0</div>
+                <div class="summary-label">Completed</div>
+              </div>
+              <div class="summary-box">
+                <div class="summary-num" id="sum-calories">0</div>
+                <div class="summary-label">Calories burned</div>
+              </div>
+              <div class="summary-box">
+                <div class="summary-num" id="sum-entries">0</div>
+                <div class="summary-label">Weight entries</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG WEIGHT MODAL -->
+  <div id="weight-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <h3>Log your weight</h3>
+      <input type="number" id="new-weight" placeholder="Weight (kg)" min="0" onkeydown="return event.key !== 'e' && event.key !== 'E'">
+      <p id="weight-message"></p>
+      <div class="button-row space-between">
+        <button class="btn-secondary" onclick="closeLogWeight()">Cancel</button>
+        <button class="btn-primary" onclick="submitWeight()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let weightChart, caloriesChart, consistencyChart;
+
+    function openLogWeight() {
+      document.getElementById('weight-modal').classList.remove('hidden');
+    }
+    function closeLogWeight() {
+      document.getElementById('weight-modal').classList.add('hidden');
+      document.getElementById('weight-message').textContent = '';
+      document.getElementById('new-weight').value = '';
+    }
+
+    async function submitWeight() {
+      const weight = document.getElementById('new-weight').value;
+
+      if (!weight || isNaN(weight) || weight < 20 || weight > 300) {
+        document.getElementById('weight-message').textContent = 'Enter a valid weight (20-300 kg).';
+        return;
+      }
+
+      const res = await fetch('/api/weight', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ weight })
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        closeLogWeight();
+        loadWeightChart();
+        loadSummary();
+      } else {
+        document.getElementById('weight-message').textContent = data.error;
+      }
+    }
+
+    async function loadWeightChart() {
+      const res = await fetch('/api/weight');
+      if (res.status === 401) {
+        window.location.href = '/';
+        return;
+      }
+      const logs = await res.json();
+
+      const labels = logs.map(l => new Date(l.logged_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }));
+      const values = logs.map(l => l.weight);
+
+      if (weightChart) weightChart.destroy();
+      weightChart = new Chart(document.getElementById('weightChart'), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: values,
+            borderColor: '#e8623d',
+            backgroundColor: '#e8623d',
+            tension: 0.3,
+            pointRadius: 4
+          }]
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: false } }
+        }
+      });
+    }
+
+    function loadPlaceholderCharts() {
+      // Calories burned - will connect once Cardio page exists
+      caloriesChart = new Chart(document.getElementById('caloriesChart'), {
+        type: 'bar',
+        data: {
+          labels: [],
+          datasets: [{ data: [], backgroundColor: '#f5a623' }]
+        },
+        options: { plugins: { legend: { display: false } } }
+      });
+
+      // Workout consistency - will connect once Workout page exists
+      consistencyChart = new Chart(document.getElementById('consistencyChart'), {
+        type: 'bar',
+        data: {
+          labels: [],
+          datasets: [{ data: [], backgroundColor: '#f5a623' }]
+        },
+        options: { plugins: { legend: { display: false } } }
+      });
+    }
+
+    async function loadSummary() {
+      const res = await fetch('/api/summary');
+      const data = await res.json();
+      document.getElementById('sum-workouts').textContent = data.totalWorkouts;
+      document.getElementById('sum-completed').textContent = data.completedWorkouts;
+      document.getElementById('sum-calories').textContent = data.caloriesBurned;
+      document.getElementById('sum-entries').textContent = data.weightEntries;
+    }
+
+    async function signOut() {
+      await fetch('/logout', { method: 'POST' });
+      window.location.href = '/';
+    }
+
+    loadWeightChart();
+    loadPlaceholderCharts();
+    loadSummary();
+  </script>
+
+</body>
+</html>
