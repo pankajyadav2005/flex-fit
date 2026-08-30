@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FlexFit</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="auth-box">
+    <h1>FlexFit</h1>
+
+    <div id="signup-form">
+      <h2>Sign Up</h2>
+      <input type="text" id="signup-name" placeholder="Name">
+      <input type="email" id="signup-email" placeholder="Email">
+      <input type="password" id="signup-password" placeholder="Password" oninput="checkPassword()">
+      <ul id="password-rules">
+      <li id="rule-length">At least 8 characters</li>
+      <li id="rule-special">Contains a special symbol (!@#$%^&*)</li>
+      </ul>
+      <button onclick="signup()">Create Account</button>
+      <p id="signup-message"></p>
+    </div>
+
+    <hr>
+
+    <div id="login-form">
+      <h2>Log In</h2>
+      <input type="email" id="login-email" placeholder="Email">
+      <input type="password" id="login-password" placeholder="Password">
+      <button onclick="login()">Log In</button>
+      <p id="login-message"></p>
+    </div>
+  </div>
+
+  <script>
+  function checkPassword() {
+    const password = document.getElementById('signup-password').value;
+    const lengthOk = password.length >= 8;
+    const specialOk = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    const lengthRule = document.getElementById('rule-length');
+    const specialRule = document.getElementById('rule-special');
+    lengthRule.style.color = lengthOk ? 'green' : 'red';
+    specialRule.style.color = specialOk ? 'green' : 'red';
+  }
+
+  async function signup() {
+    const name = document.getElementById('signup-name').value;
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
+
+    const strongPassword = /^(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
+    if (!strongPassword.test(password)) {
+      document.getElementById('signup-message').textContent =
+        'Password must be at least 8 characters and include a special symbol.';
+      return;
+    }
+
+    const res = await fetch('/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password })
+    });
+    const data = await res.json();
+    document.getElementById('signup-message').textContent = data.message || data.error;
+  }
+
+  async function login() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+
+    const res = await fetch('/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    document.getElementById('login-message').textContent = data.message || data.error;
+  }
+</script>
+<a href="/auth/google"><button type="button">Continue with Google</button></a>
+</body>
+</html>

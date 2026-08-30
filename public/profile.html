@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FlexFit - Profile</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-layout">
+
+    <div class="sidebar">
+      <div class="sidebar-logo">🏋️ FlexFit AI</div>
+      <nav class="sidebar-nav">
+        <a href="/dashboard.html">📊 Dashboard</a>
+        <a href="/workout.html">🏋️ Workout</a>
+        <a href="/food.html">🍽️ Food</a>
+        <a href="/cardio.html">📈 Cardio</a>
+        <a href="/jiya.html">💬 Jiya AI</a>
+        <a href="/progress.html">📈 Progress</a>
+        <a href="/profile.html" class="active">👤 Profile</a>
+      </nav>
+      <a href="#" class="sidebar-signout" onclick="signOut()">↩ Sign Out</a>
+    </div>
+
+    <div class="main-content">
+      <div class="profile-page">
+
+        <div class="step-indicator">
+          <div class="step active" id="step-dot-1"><span class="step-num">1</span> Sports</div>
+          <div class="step-line"></div>
+          <div class="step" id="step-dot-2"><span class="step-num">2</span> Goals</div>
+          <div class="step-line"></div>
+          <div class="step" id="step-dot-3"><span class="step-num">3</span> Details</div>
+        </div>
+
+        <div class="card-panel">
+
+          <div id="step-sports">
+            <div class="panel-header">
+              <h2>Which sports do you train for?</h2>
+              <span id="sports-count" class="count-badge">0 selected</span>
+            </div>
+            <div id="sports-grid" class="card-grid"></div>
+            <div class="button-row right">
+              <button class="btn-primary" onclick="goToGoals()">Next →</button>
+            </div>
+          </div>
+
+          <div id="step-goals" class="hidden">
+            <div class="panel-header">
+              <h2>What are you working towards?</h2>
+              <span id="goals-count" class="count-badge">0 selected</span>
+            </div>
+            <p class="subtext">Goals from your chosen sports.</p>
+            <div id="goals-grid" class="pill-grid"></div>
+            <div class="button-row space-between">
+              <button class="btn-secondary" onclick="backToSports()">← Back</button>
+              <button class="btn-primary" onclick="goToDetails()">Next →</button>
+            </div>
+          </div>
+
+          <div id="step-details" class="hidden">
+            <h2>Your Profile</h2>
+            <p class="subtext">Pick as many sports and goals as you like.</p>
+
+            <div class="details-grid">
+              <div class="field">
+                <label>Age (years)</label>
+                <input type="number" id="age" min="0" onkeydown="return event.key !== 'e' && event.key !== 'E'">
+              </div>
+              <div class="field">
+                <label>Height (cm)</label>
+                <input type="number" id="height" min="0" onkeydown="return event.key !== 'e' && event.key !== 'E'">
+              </div>
+              <div class="field">
+                <label>Weight (kg)</label>
+                <input type="number" id="weight" min="0" onkeydown="return event.key !== 'e' && event.key !== 'E'">
+              </div>
+              <div class="field">
+                <label>Target weight (kg)</label>
+                <input type="number" id="target_weight" min="0" onkeydown="return event.key !== 'e' && event.key !== 'E'">
+              </div>
+            </div>
+
+            <label class="fitness-label">Fitness level</label>
+            <div class="fitness-grid" id="fitness-grid">
+              <div class="fitness-card" data-level="Beginner" onclick="selectFitness('Beginner')">
+                <strong>Beginner</strong>
+                <p>New to training or returning after a long break</p>
+              </div>
+              <div class="fitness-card" data-level="Intermediate" onclick="selectFitness('Intermediate')">
+                <strong>Intermediate</strong>
+                <p>Training consistently for 6+ months</p>
+              </div>
+              <div class="fitness-card" data-level="Advanced" onclick="selectFitness('Advanced')">
+                <strong>Advanced</strong>
+                <p>Years of structured training and solid technique</p>
+              </div>
+              <div class="fitness-card" data-level="Elite" onclick="selectFitness('Elite')">
+                <strong>Elite</strong>
+                <p>Competing at a high level with periodised training</p>
+              </div>
+            </div>
+
+            <div class="button-row space-between">
+              <button class="btn-secondary" onclick="backToGoals()">← Back</button>
+              <button class="btn-primary" onclick="saveProfile()">✨ Save & Generate Targets</button>
+            </div>
+          </div>
+
+          <p id="profile-message"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="sportsData.js"></script>
+  <script>
+    let selectedSports = [];
+    let selectedGoals = [];
+    let selectedFitness = 'Beginner';
+
+    function renderSports() {
+      const grid = document.getElementById('sports-grid');
+      grid.innerHTML = '';
+      Object.keys(SPORTS_DATA).forEach(sport => {
+        const isSelected = selectedSports.includes(sport);
+        const card = document.createElement('div');
+        card.className = 'sport-card' + (isSelected ? ' selected' : '');
+        card.innerHTML = `
+          <div class="sport-icon">${SPORTS_DATA[sport].icon}</div>
+          <div class="sport-name">${sport}</div>
+          <div class="sport-goals-count">${SPORTS_DATA[sport].goals.length} goals</div>
+        `;
+        card.onclick = () => toggleSport(sport);
+        grid.appendChild(card);
+      });
+      document.getElementById('sports-count').textContent = selectedSports.length + ' selected';
+    }
+
+    function toggleSport(sport) {
+      if (selectedSports.includes(sport)) {
+        selectedSports = selectedSports.filter(s => s !== sport);
+        const removedGoals = SPORTS_DATA[sport].goals;
+        selectedGoals = selectedGoals.filter(g => !removedGoals.includes(g));
+      } else {
+        selectedSports.push(sport);
+      }
+      renderSports();
+    }
+
+    function renderGoals() {
+      const grid = document.getElementById('goals-grid');
+      grid.innerHTML = '';
+      selectedSports.forEach(sport => {
+        SPORTS_DATA[sport].goals.forEach(goal => {
+          const isSelected = selectedGoals.includes(goal);
+          const pill = document.createElement('div');
+          pill.className = 'goal-pill' + (isSelected ? ' selected' : '');
+          pill.textContent = goal;
+          pill.onclick = () => toggleGoal(goal);
+          grid.appendChild(pill);
+        });
+      });
+      document.getElementById('goals-count').textContent = selectedGoals.length + ' selected';
+    }
+
+    function toggleGoal(goal) {
+      if (selectedGoals.includes(goal)) {
+        selectedGoals = selectedGoals.filter(g => g !== goal);
+      } else {
+        selectedGoals.push(goal);
+      }
+      renderGoals();
+    }
+
+    function selectFitness(level) {
+      selectedFitness = level;
+      document.querySelectorAll('.fitness-card').forEach(card => {
+        card.classList.toggle('selected', card.dataset.level === level);
+      });
+    }
+
+    function goToGoals() {
+      if (selectedSports.length === 0) {
+        alert('Pick at least one sport first.');
+        return;
+      }
+      document.getElementById('step-sports').classList.add('hidden');
+      document.getElementById('step-goals').classList.remove('hidden');
+      setStepDot(2);
+      renderGoals();
+    }
+
+    function backToSports() {
+      document.getElementById('step-goals').classList.add('hidden');
+      document.getElementById('step-sports').classList.remove('hidden');
+      setStepDot(1);
+    }
+
+    function goToDetails() {
+      document.getElementById('step-goals').classList.add('hidden');
+      document.getElementById('step-details').classList.remove('hidden');
+      setStepDot(3);
+    }
+
+    function backToGoals() {
+      document.getElementById('step-details').classList.add('hidden');
+      document.getElementById('step-goals').classList.remove('hidden');
+      setStepDot(2);
+    }
+
+    function setStepDot(num) {
+      [1, 2, 3].forEach(n => {
+        document.getElementById('step-dot-' + n).classList.toggle('active', n <= num);
+      });
+    }
+
+    async function saveProfile() {
+      const age = document.getElementById('age').value;
+      const height = document.getElementById('height').value;
+      const weight = document.getElementById('weight').value;
+      const target_weight = document.getElementById('target_weight').value;
+
+      if (!age || age < 5 || age > 100) {
+        document.getElementById('profile-message').textContent = 'Enter a valid age (5-100).';
+        return;
+      }
+      if (!height || height < 50 || height > 250) {
+        document.getElementById('profile-message').textContent = 'Enter a valid height in cm (50-250).';
+        return;
+      }
+      if (!weight || weight < 20 || weight > 300) {
+        document.getElementById('profile-message').textContent = 'Enter a valid weight in kg (20-300).';
+        return;
+      }
+      if (!target_weight || target_weight < 20 || target_weight > 300) {
+        document.getElementById('profile-message').textContent = 'Enter a valid target weight in kg (20-300).';
+        return;
+      }
+
+      const profile = {
+        sports: selectedSports,
+        goals: selectedGoals,
+        age, height, weight, target_weight,
+        fitness_level: selectedFitness
+      };
+
+      const res = await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profile)
+      });
+      const data = await res.json();
+      document.getElementById('profile-message').textContent = data.message || data.error;
+    }
+
+    async function loadProfile() {
+      const res = await fetch('/api/profile');
+      if (res.status === 401) {
+        window.location.href = '/';
+        return;
+      }
+      const data = await res.json();
+      if (data) {
+        selectedSports = data.sports || [];
+        selectedGoals = data.goals || [];
+        document.getElementById('age').value = data.age || '';
+        document.getElementById('height').value = data.height || '';
+        document.getElementById('weight').value = data.weight || '';
+        document.getElementById('target_weight').value = data.target_weight || '';
+        selectFitness(data.fitness_level || 'Beginner');
+      }
+      renderSports();
+    }
+
+    async function signOut() {
+      await fetch('/logout', { method: 'POST' });
+      window.location.href = '/';
+    }
+
+    loadProfile();
+  </script>
+
+</body>
+</html>
