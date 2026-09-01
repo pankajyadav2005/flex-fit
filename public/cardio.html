@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FlexFit - Cardio</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-layout">
+
+    <div class="sidebar">
+      <div class="sidebar-logo">🏋️ FlexFit AI</div>
+      <nav class="sidebar-nav">
+        <a href="/dashboard.html">📊 Dashboard</a>
+        <a href="/workout.html">🏋️ Workout</a>
+        <a href="/food.html">🍽️ Food</a>
+        <a href="/cardio.html" class="active">📈 Cardio</a>
+        <a href="/jiya.html">💬 Jiya AI</a>
+        <a href="/progress.html">📈 Progress</a>
+        <a href="/profile.html">👤 Profile</a>
+      </nav>
+      <a href="#" class="sidebar-signout" onclick="signOut()">↩ Sign Out</a>
+    </div>
+
+    <div class="main-content">
+      <div class="cardio-page">
+
+        <h1>Cardio Tracker</h1>
+        <p class="subtext">Pick an activity, hit start — GPS tracks your real movement and distance.</p>
+        <p id="gps-status" class="gps-status"></p>
+
+        <div class="cardio-grid">
+
+          <div class="cardio-left">
+
+            <div class="stat-card">
+              <h3>Choose your activity</h3>
+              <input type="text" id="activity-search" placeholder="Search activities..." oninput="renderCategories()">
+              <div id="category-tabs" class="category-tabs"></div>
+              <div id="activity-pills" class="pill-grid"></div>
+            </div>
+
+            <div class="stat-card timer-card">
+              <div class="timer-activity-name" id="timer-activity-name">JOGGING (8 KM/H)</div>
+              <div class="timer-display" id="timer-display">00:00:00</div>
+              <div class="timer-stats">
+                <div>
+                  <div class="timer-num" id="timer-kcal">0</div>
+                  <div class="summary-label">kcal burned</div>
+                </div>
+                <div>
+                  <div class="timer-num" id="timer-distance">0.00</div>
+                  <div class="summary-label">km (GPS)</div>
+                </div>
+                <div>
+                  <div class="timer-num" id="timer-minutes">0</div>
+                  <div class="summary-label">minutes</div>
+                </div>
+              </div>
+              <button class="btn-primary timer-btn" id="timer-btn" onclick="toggleTimer()">▶ Start</button>
+              <p class="subtext timer-meta" id="timer-meta">MET -- · body weight -- kg</p>
+            </div>
+
+          </div>
+
+          <div class="stat-card">
+            <h3>Session history</h3>
+            <div class="summary-grid">
+              <div class="summary-box">
+                <div class="summary-num" id="hist-kcal">0</div>
+                <div class="summary-label">total kcal</div>
+              </div>
+              <div class="summary-box">
+                <div class="summary-num" id="hist-minutes">0</div>
+                <div class="summary-label">total minutes</div>
+              </div>
+            </div>
+            <div id="session-list" class="session-list"></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="cardioData.js"></script>
+  <script>
+    let selectedActivity = null;
+    let userWeight = 70;
+    let activeCategory = null;
+
+    let timerRunning = false;
+    let elapsedSeconds = 0;    // total clock time
+    let movingSeconds = 0;     // time actually spent moving (GPS-confirmed)
+    let timerInterval = null;
+
+    // GPS tracking state
+    let gpsWatchId = null;
+    let lastPosition = null;   // { lat, lon, timestamp }
+    let totalDistanceKm = 0;
+    const MIN_MOVING_SPEED_KMH = 1.5; // below this, treat as "not moving" (filters standing still / GPS noise)
+    const MAX_REALISTIC_SPEED_KMH = 40; // above this, treat as GPS jump/error, ignore
+
+    // Haversine formula: real-world distance between two GPS coordinates (in km)
+    function haversineDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371; // Earth's radius in km
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) ** 2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    function renderCategories() {
+      const searchTerm = document.getElementById('activity-search').value.toLowerCase();
+      const tabsContainer = document.getElementById('category-tabs');
+      tabsContainer.innerHTML = '';
+
+      Object.keys(CARDIO_CATEGORIES).forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = 'category-tab' + (cat === activeCategory ? ' active' : '');
+        btn.textContent = cat;
+        btn.onclick = () => { activeCategory = cat; renderCategories(); };
+        tabsContainer.appendChild(btn);
+      });
+
+      const pillsContainer = document.getElementById('activity-pills');
+      pillsContainer.innerHTML = '';
+
+      let activitiesToShow = [];
+      if (searchTerm) {
+        Object.values(CARDIO_CATEGORIES).flat().forEach(a => {
+          if (a.name.toLowerCase().includes(searchTerm)) activitiesToShow.push(a);
+        });
+      } else if (activeCategory) {
+        activitiesToShow = CARDIO_CATEGORIES[activeCategory];
+      } else {
+        activitiesToShow = CARDIO_CATEGORIES["Running"];
+        activeCategory = "Running";
+      }
+
+      activitiesToShow.forEach(a => {
+        const pill = document.createElement('div');
+        pill.className = 'goal-pill' + (selectedActivity && selectedActivity.name === a.name ? ' selected' : '');
+        pill.textContent = a.name;
+        pill.onclick = () => selectActivity(a);
+        pillsContainer.appendChild(pill);
+      });
+    }
+
+    function selectActivity(activity) {
+      if (timerRunning) {
+        alert('Stop the current session before switching activities.');
+        return;
+      }
+      selectedActivity = activity;
+      elapsedSeconds = 0;
+      movingSeconds = 0;
+      totalDistanceKm = 0;
+      updateTimerDisplay();
+      document.getElementById('timer-activity-name').textContent = activity.name.toUpperCase();
+      document.getElementById('timer-meta').textContent = `MET ${activity.met} · body weight ${userWeight} kg`;
+      renderCategories();
+    }
+
+    function toggleTimer() {
+      if (!selectedActivity) {
+        alert('Pick an activity first.');
+        return;
+      }
+
+      if (!timerRunning) {
+        startSession();
+      } else {
+        stopSession();
+      }
+    }
+
+    function startSession() {
+      timerRunning = true;
+      document.getElementById('timer-btn').textContent = '■ Stop';
+
+      timerInterval = setInterval(() => {
+        elapsedSeconds++;
+        updateTimerDisplay();
+      }, 1000);
+
+      startGPS();
+    }
+
+    function startGPS() {
+      if (!navigator.geolocation) {
+        document.getElementById('gps-status').textContent = 'GPS not supported on this browser — calories will use time only.';
+        return;
+      }
+
+      document.getElementById('gps-status').textContent = 'Requesting GPS access...';
+
+      gpsWatchId = navigator.geolocation.watchPosition(
+        (position) => {
+          document.getElementById('gps-status').textContent = '📍 GPS active — tracking real movement';
+          const { latitude, longitude } = position.coords;
+          const now = Date.now();
+
+          if (lastPosition) {
+            const distanceKm = haversineDistance(lastPosition.lat, lastPosition.lon, latitude, longitude);
+            const timeDeltaHours = (now - lastPosition.timestamp) / 1000 / 3600;
+            const speedKmh = timeDeltaHours > 0 ? distanceKm / timeDeltaHours : 0;
+
+            if (speedKmh >= MIN_MOVING_SPEED_KMH && speedKmh <= MAX_REALISTIC_SPEED_KMH) {
+              totalDistanceKm += distanceKm;
+              movingSeconds += (now - lastPosition.timestamp) / 1000;
+            }
+          }
+
+          lastPosition = { lat: latitude, lon: longitude, timestamp: now };
+          updateTimerDisplay();
+        },
+        (error) => {
+          document.getElementById('gps-status').textContent = 'GPS permission denied or unavailable — calories will use time only.';
+        },
+        { enableHighAccuracy: true, maximumAge: 0 }
+      );
+    }
+
+    function stopSession() {
+      timerRunning = false;
+      clearInterval(timerInterval);
+      document.getElementById('timer-btn').textContent = '▶ Start';
+
+      if (gpsWatchId !== null) {
+        navigator.geolocation.clearWatch(gpsWatchId);
+        gpsWatchId = null;
+      }
+      lastPosition = null;
+      document.getElementById('gps-status').textContent = '';
+
+      saveSession();
+    }
+
+    function updateTimerDisplay() {
+      const h = String(Math.floor(elapsedSeconds / 3600)).padStart(2, '0');
+      const m = String(Math.floor((elapsedSeconds % 3600) / 60)).padStart(2, '0');
+      const s = String(elapsedSeconds % 60).padStart(2, '0');
+      document.getElementById('timer-display').textContent = `${h}:${m}:${s}`;
+      document.getElementById('timer-distance').textContent = totalDistanceKm.toFixed(2);
+
+      const movingHours = movingSeconds / 3600;
+      const kcal = selectedActivity ? Math.round(selectedActivity.met * userWeight * movingHours) : 0;
+      document.getElementById('timer-kcal').textContent = kcal;
+      document.getElementById('timer-minutes').textContent = Math.floor(elapsedSeconds / 60);
+    }
+
+    async function saveSession() {
+      if (elapsedSeconds < 5) {
+        elapsedSeconds = 0;
+        movingSeconds = 0;
+        totalDistanceKm = 0;
+        updateTimerDisplay();
+        return;
+      }
+
+      const movingHours = movingSeconds / 3600;
+      const calories = Math.round(selectedActivity.met * userWeight * movingHours);
+
+      await fetch('/api/cardio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          activity_name: selectedActivity.name,
+          met: selectedActivity.met,
+          duration_seconds: elapsedSeconds,
+          distance_km: Math.round(totalDistanceKm * 100) / 100,
+          calories
+        })
+      });
+
+      elapsedSeconds = 0;
+      movingSeconds = 0;
+      totalDistanceKm = 0;
+      updateTimerDisplay();
+      loadHistory();
+    }
+
+    async function loadHistory() {
+      const res = await fetch('/api/cardio');
+      if (res.status === 401) {
+        window.location.href = '/';
+        return;
+      }
+      const data = await res.json();
+
+      document.getElementById('hist-kcal').textContent = data.totalKcal;
+      document.getElementById('hist-minutes').textContent = data.totalMinutes;
+
+      // Group sessions by day
+      const groups = {};
+      data.sessions.forEach(s => {
+        const sessionDate = new Date(s.logged_at);
+        const dayKey = sessionDate.toDateString();
+        if (!groups[dayKey]) groups[dayKey] = [];
+        groups[dayKey].push(s);
+      });
+
+      const list = document.getElementById('session-list');
+      list.innerHTML = '';
+
+      Object.keys(groups).forEach(dayKey => {
+        const sessionsForDay = groups[dayKey];
+        const dayLabel = formatDayLabel(new Date(dayKey));
+        const dayTotalKcal = sessionsForDay.reduce((sum, s) => sum + Math.round(s.calories), 0);
+
+        const header = document.createElement('div');
+        header.className = 'session-day-header';
+        header.innerHTML = `<span>${dayLabel}</span><span>${dayTotalKcal} kcal</span>`;
+        list.appendChild(header);
+
+        sessionsForDay.forEach(s => {
+          const mins = Math.round(s.duration_seconds / 60);
+          const time = new Date(s.logged_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+          const distanceText = s.distance_km > 0 ? ` · ${s.distance_km.toFixed(2)} km` : '';
+          const item = document.createElement('div');
+          item.className = 'session-item';
+          item.innerHTML = `
+            <div>
+              <div class="session-name">${s.activity_name}</div>
+              <div class="summary-label">${time} · ${mins} min${distanceText}</div>
+            </div>
+            <div class="session-kcal">${Math.round(s.calories)} kcal</div>
+          `;
+          list.appendChild(item);
+        });
+      });
+    }
+
+    function formatDayLabel(date) {
+      const today = new Date();
+      const yesterday = new Date();
+      yesterday.setDate(today.getDate() - 1);
+
+      if (date.toDateString() === today.toDateString()) return 'Today';
+      if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+
+      return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    }
+
+    async function loadUserWeight() {
+      const res = await fetch('/api/profile');
+      if (res.status === 401) {
+        window.location.href = '/';
+        return;
+      }
+      const data = await res.json();
+      if (data && data.weight) userWeight = data.weight;
+    }
+
+    async function signOut() {
+      await fetch('/logout', { method: 'POST' });
+      window.location.href = '/';
+    }
+
+    async function init() {
+      await loadUserWeight();
+      renderCategories();
+      selectActivity(CARDIO_CATEGORIES["Running"][0]);
+      loadHistory();
+    }
+
+    init();
+  </script>
+
+</body>
+</html>

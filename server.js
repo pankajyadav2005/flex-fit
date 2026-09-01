@@ -172,16 +172,74 @@ app.post('/api/weight', requireLogin, (req, res) => {
   res.json({ message: 'Weight logged' });
 });
 
+// GET cardio session history + totals
+app.get('/api/cardio', requireLogin, (req, res) => {
+  const sessions = db.prepare('SELECT * FROM cardio_sessions WHERE user_id = ? ORDER BY logged_at DESC').all(req.currentUserId);
+  const totals = db.prepare('SELECT COALESCE(SUM(calories),0) as totalKcal, COALESCE(SUM(duration_seconds),0) as totalSeconds FROM cardio_sessions WHERE user_id = ?').get(req.currentUserId);
+
+  res.json({
+    sessions,
+    totalKcal: Math.round(totals.totalKcal),
+    totalMinutes: Math.round(totals.totalSeconds / 60)
+  });
+});
+
+// POST a completed cardio session (now includes real GPS-tracked distance)
+app.post('/api/cardio', requireLogin, (req, res) => {
+  const { activity_name, met, duration_seconds, distance_km, calories } = req.body;
+
+  if (!activity_name || !met || !duration_seconds || duration_seconds < 1) {
+    return res.status(400).json({ error: 'Invalid session data' });
+  }
+
+  db.prepare(`
+    INSERT INTO cardio_sessions (user_id, activity_name, met, duration_seconds, distance_km, calories)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(req.currentUserId, activity_name, met, duration_seconds, distance_km || 0, calories);
+
+  res.json({ message: 'Session saved' });
+});
+
 // GET summary stats for the Progress page
 app.get('/api/summary', requireLogin, (req, res) => {
   const weightCount = db.prepare('SELECT COUNT(*) as count FROM weight_logs WHERE user_id = ?').get(req.currentUserId).count;
+  const cardioTotals = db.prepare('SELECT COALESCE(SUM(calories),0) as totalKcal FROM cardio_sessions WHERE user_id = ?').get(req.currentUserId);
 
   res.json({
     totalWorkouts: 0,      // will connect once Workout page exists
     completedWorkouts: 0,  // will connect once Workout page exists
-    caloriesBurned: 0,     // will connect once Cardio page exists
+    caloriesBurned: Math.round(cardioTotals.totalKcal),
     weightEntries: weightCount
   });
+});
+
+// JIYA AI - rule-based chat trainer, personalized using saved profile data
+app.post('/api/jiya', requireLogin, (req, res) => {
+  const { message } = req.body;
+  const profile = db.prepare('SELECT * FROM profiles WHERE user_id = ?').get(req.currentUserId);
+  const fitnessLevel = profile ? profile.fitness_level : 'Beginner';
+  const weight = profile ? profile.weight : 70;
+
+  const text = message.toLowerCase();
+  let reply;
+
+  if (text.includes('push')) {
+    reply = `Here's a Push Day workout for ${fitnessLevel} level:\n\n1. Bench Press - 4x8\n2. Overhead Press - 3x10\n3. Incline Dumbbell Press - 3x10\n4. Tricep Dips - 3x12\n5. Lateral Raises - 3x15`;
+  } else if (text.includes('hiit')) {
+    reply = `30-Minute HIIT Workout:\n\n5 min warm-up\n8 rounds of: 40s work / 20s rest\n- Jump squats\n- Mountain climbers\n- Burpees\n- Push-ups\n5 min cool-down stretch`;
+  } else if (text.includes('protein')) {
+    const low = Math.round(weight * 1.6);
+    const high = Math.round(weight * 2.2);
+    reply = `Based on your weight (${weight}kg), aim for ${low}-${high}g of protein per day (1.6-2.2g per kg of bodyweight is the standard range for active individuals).`;
+  } else if (text.includes('meal') || text.includes('cutting') || text.includes('diet')) {
+    reply = `For a cutting phase, aim for a moderate calorie deficit (about 300-500 kcal below maintenance) while keeping protein high to preserve muscle. Focus on lean proteins, vegetables, and whole grains.`;
+  } else if (text.includes('leg')) {
+    reply = `Leg Day workout for ${fitnessLevel} level:\n\n1. Squats - 4x8\n2. Romanian Deadlifts - 3x10\n3. Leg Press - 3x12\n4. Walking Lunges - 3x12 each leg\n5. Calf Raises - 4x15`;
+  } else {
+    reply = `I can help with workouts, meal plans, and nutrition questions. Try asking me for a specific workout (like "push day" or "leg day"), a meal plan, or a nutrition question like "how much protein do I need?"`;
+  }
+
+  res.json({ reply });
 });
 
 const PORT = 3000;

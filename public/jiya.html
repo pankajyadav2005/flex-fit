@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FlexFit - Jiya AI</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-layout">
+
+    <div class="sidebar">
+      <div class="sidebar-logo">🏋️ FlexFit AI</div>
+      <nav class="sidebar-nav">
+        <a href="/dashboard.html">📊 Dashboard</a>
+        <a href="/workout.html">🏋️ Workout</a>
+        <a href="/food.html">🍽️ Food</a>
+        <a href="/cardio.html">📈 Cardio</a>
+        <a href="/jiya.html" class="active">💬 Jiya AI</a>
+        <a href="/progress.html">📈 Progress</a>
+        <a href="/profile.html">👤 Profile</a>
+      </nav>
+      <a href="#" class="sidebar-signout" onclick="signOut()">↩ Sign Out</a>
+    </div>
+
+    <div class="main-content">
+      <div class="jiya-page">
+
+        <h1>Jiya — AI Fitness Trainer</h1>
+        <p class="subtext">Coaching that knows your profile, goals and targets.</p>
+
+        <div class="chat-panel">
+          <div id="chat-messages" class="chat-messages">
+            <div class="chat-bubble bot">
+              Hi, I'm <strong>Jiya</strong> — your fitness trainer. Ask me for a workout, a meal plan, or a nutrition question and I'll tailor it to your profile.
+            </div>
+          </div>
+
+          <div class="suggested-prompts">
+            <button onclick="sendPrompt('Generate a push day workout')">Generate a push day workout</button>
+            <button onclick="sendPrompt('Create a meal plan for cutting')">Create a meal plan for cutting</button>
+            <button onclick="sendPrompt('How much protein do I need?')">How much protein do I need?</button>
+            <button onclick="sendPrompt('Give me a HIIT workout for 30 minutes')">Give me a HIIT workout for 30 minutes</button>
+          </div>
+
+          <div class="chat-input-row">
+            <input type="text" id="chat-input" placeholder="Ask Jiya anything..." onkeydown="if(event.key === 'Enter') sendMessage()">
+            <button class="btn-primary" onclick="sendMessage()">➤</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function sendMessage() {
+      const input = document.getElementById('chat-input');
+      const message = input.value.trim();
+      if (!message) return;
+
+      addBubble(message, 'user');
+      input.value = '';
+
+      try {
+        const res = await fetch('/api/jiya', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message })
+        });
+
+        if (!res.ok) {
+          addBubble(`Error (status ${res.status}): the server rejected this request. Are you logged in?`, 'bot');
+          return;
+        }
+
+        const data = await res.json();
+
+        if (!data.reply) {
+          addBubble('Error: server responded but sent no reply text. Check server.js /api/jiya route.', 'bot');
+          return;
+        }
+
+        addBubble(data.reply, 'bot');
+
+      } catch (err) {
+        addBubble('Error: could not reach the server at all. Message: ' + err.message, 'bot');
+      }
+    }
+
+    function sendPrompt(text) {
+      document.getElementById('chat-input').value = text;
+      sendMessage();
+    }
+
+    function addBubble(text, sender) {
+      const container = document.getElementById('chat-messages');
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-bubble ' + sender;
+      bubble.innerText = text;
+      container.appendChild(bubble);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    async function signOut() {
+      await fetch('/logout', { method: 'POST' });
+      window.location.href = '/';
+    }
+  </script>
+
+</body>
+</html>

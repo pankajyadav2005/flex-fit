@@ -35,4 +35,17 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id)
   )
 `);
+db.exec(`
+  CREATE TABLE IF NOT EXISTS cardio_sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    activity_name TEXT NOT NULL,
+    met REAL NOT NULL,
+    duration_seconds INTEGER NOT NULL,
+    distance_km REAL DEFAULT 0,
+    calories REAL NOT NULL,
+    logged_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  )
+`);
 module.exports = db;
