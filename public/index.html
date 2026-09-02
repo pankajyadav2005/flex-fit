@@ -64,6 +64,10 @@
     });
     const data = await res.json();
     document.getElementById('signup-message').textContent = data.message || data.error;
+
+    if (res.ok) {
+      window.location.href = '/dashboard.html';
+    }
   }
 
   async function login() {
@@ -77,6 +81,10 @@
     });
     const data = await res.json();
     document.getElementById('login-message').textContent = data.message || data.error;
+
+    if (res.ok) {
+      window.location.href = '/dashboard.html';
+    }
   }
 </script>
 <a href="/auth/google"><button type="button">Continue with Google</button></a>

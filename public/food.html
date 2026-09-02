@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FlexFit - Food</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-layout">
+
+    <div class="sidebar">
+      <div class="sidebar-logo">🏋️ FlexFit AI</div>
+      <nav class="sidebar-nav">
+        <a href="/dashboard.html">📊 Dashboard</a>
+        <a href="/workout.html">🏋️ Workout</a>
+        <a href="/food.html" class="active">🍽️ Food</a>
+        <a href="/cardio.html">📈 Cardio</a>
+        <a href="/jiya.html">💬 Jiya AI</a>
+        <a href="/progress.html">📈 Progress</a>
+        <a href="/profile.html">👤 Profile</a>
+      </nav>
+      <a href="#" class="sidebar-signout" onclick="signOut()">↩ Sign Out</a>
+    </div>
+
+    <div class="main-content">
+      <div class="food-page">
+
+        <h1>Food</h1>
+        <p class="subtext">Plan and log everything you eat.</p>
+
+        <div class="category-tabs food-tabs">
+          <button class="category-tab active" id="tab-diet" onclick="switchTab('diet')">Diet Plan</button>
+          <button class="category-tab" id="tab-scanner" onclick="switchTab('scanner')">Food Scanner</button>
+          <button class="category-tab" id="tab-log" onclick="switchTab('log')">Nutrition Log</button>
+          <button class="category-tab" id="tab-ai" onclick="switchTab('ai')">Nutrition AI</button>
+        </div>
+
+        <!-- DIET PLAN TAB -->
+        <div id="panel-diet" class="stat-card">
+          <div class="panel-header">
+            <span id="target-label">Target: -- kcal per day</span>
+            <button class="btn-primary" onclick="generatePlan()">✨ Generate Plan</button>
+          </div>
+          <p id="diet-empty-msg" class="subtext">Generate a plan based on your profile — breakfast, lunch, dinner and a snack, with four swappable alternatives for each.</p>
+          <div id="diet-plan-slots"></div>
+        </div>
+
+        <!-- FOOD SCANNER TAB -->
+        <div id="panel-scanner" class="stat-card hidden">
+          <div class="scanner-buttons">
+            <button class="btn-secondary" onclick="document.getElementById('photo-input').click()">📤 Upload photo</button>
+            <button class="btn-secondary" onclick="document.getElementById('camera-input').click()">📷 Open camera</button>
+            <button class="btn-primary" onclick="handleScanClick()">✨ Scan Food with AI</button>
+          </div>
+          <input type="file" id="photo-input" accept="image/*" class="hidden" onchange="handlePhotoSelected(event)">
+          <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden" onchange="handlePhotoSelected(event)">
+          <p class="subtext" id="scanner-subtext">Snap or upload a photo of your plate, then click Scan — this uses Google Cloud Vision's real label detection, matched against our nutrition database.</p>
+          <img id="photo-preview" class="hidden photo-preview">
+          <p id="scanner-note" class="subtext scanner-note hidden"></p>
+        </div>
+
+        <!-- NUTRITION LOG TAB -->
+        <div id="panel-log" class="stat-card hidden">
+          <div class="panel-header">
+            <span id="log-kcal-label">Today: 0 / 0 kcal</span>
+            <button class="btn-primary" onclick="openLogMeal()">+ Log Meal</button>
+          </div>
+          <div class="macro-bars">
+            <div class="macro-bar"><div class="summary-label">Protein</div><div id="bar-protein" class="summary-num">0/0 g</div></div>
+            <div class="macro-bar"><div class="summary-label">Carbs</div><div id="bar-carbs" class="summary-num">0/0 g</div></div>
+            <div class="macro-bar"><div class="summary-label">Fat</div><div id="bar-fat" class="summary-num">0/0 g</div></div>
+          </div>
+          <div id="meal-list" class="session-list"></div>
+        </div>
+
+        <!-- NUTRITION AI TAB -->
+        <div id="panel-ai" class="stat-card hidden">
+          <p class="subtext">Add ingredients you have, and get a suggested meal with real combined nutrition.</p>
+          <div class="ai-input-row">
+            <input type="text" id="ai-ingredient-input" placeholder="Add an ingredient you have...">
+            <button class="btn-secondary" onclick="addIngredientTag()">+</button>
+          </div>
+          <div id="ingredient-tags" class="pill-grid"></div>
+          <button class="btn-primary" onclick="generateFromIngredients()">✨ Generate Meal</button>
+          <div id="ai-result"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG MEAL MODAL -->
+  <div id="meal-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <h3>Log a meal</h3>
+      <select id="food-select"></select>
+      <input type="number" id="food-grams" placeholder="Amount (grams)" min="0">
+      <p id="meal-preview" class="subtext"></p>
+      <p id="meal-message"></p>
+      <div class="button-row space-between">
+        <button class="btn-secondary" onclick="closeLogMeal()">Cancel</button>
+        <button class="btn-primary" onclick="submitMeal()">Log it</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="foodData.js"></script>
+  <script>
+    let dietTarget = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+    let selectedMealOption = {};
+    let ingredientTags = [];
+    let currentPhotoBase64 = null;
+
+    function switchTab(tab) {
+      ['diet', 'scanner', 'log', 'ai'].forEach(t => {
+        document.getElementById('panel-' + t).classList.toggle('hidden', t !== tab);
+        document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+      });
+      if (tab === 'log') loadFoodLog();
+    }
+
+    // ---------- DIET PLAN ----------
+    async function loadTarget() {
+      const res = await fetch('/api/food/target');
+      if (res.status === 401) { window.location.href = '/'; return; }
+      const data = await res.json();
+      dietTarget = data;
+      document.getElementById('target-label').textContent = `Target: ${data.calories} kcal per day`;
+    }
+
+    function generatePlan() {
+      document.getElementById('diet-empty-msg').classList.add('hidden');
+      const container = document.getElementById('diet-plan-slots');
+      container.innerHTML = '';
+
+      Object.keys(MEAL_TEMPLATES).forEach(slot => {
+        if (selectedMealOption[slot] === undefined) selectedMealOption[slot] = 0;
+        renderMealSlot(slot, container);
+      });
+    }
+
+    function renderMealSlot(slot, container) {
+      const option = MEAL_TEMPLATES[slot][selectedMealOption[slot]];
+      const div = document.createElement('div');
+      div.className = 'meal-slot';
+      div.innerHTML = `
+        <div class="meal-slot-header">
+          <strong>${slot}</strong>
+          <button class="btn-secondary meal-swap-btn" onclick="swapMeal('${slot}')">🔄 Swap</button>
+        </div>
+        <div class="session-name">${option.name}</div>
+        <div class="summary-label">${option.calories} kcal · P ${option.protein}g · C ${option.carbs}g · F ${option.fat}g</div>
+      `;
+      div.id = 'slot-' + slot;
+      container.appendChild(div);
+    }
+
+    function swapMeal(slot) {
+      selectedMealOption[slot] = (selectedMealOption[slot] + 1) % MEAL_TEMPLATES[slot].length;
+      const old = document.getElementById('slot-' + slot);
+      const container = document.getElementById('diet-plan-slots');
+      old.remove();
+      renderMealSlot(slot, container);
+    }
+
+    // ---------- FOOD SCANNER (real Google Cloud Vision API) ----------
+    function handlePhotoSelected(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const preview = document.getElementById('photo-preview');
+      preview.src = URL.createObjectURL(file);
+      preview.classList.remove('hidden');
+      document.getElementById('scanner-subtext').textContent = 'Photo ready. Click "Scan Food with AI" to analyze it.';
+      document.getElementById('scanner-note').classList.add('hidden');
+      const existingResults = document.getElementById('scan-results');
+      if (existingResults) existingResults.remove();
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        currentPhotoBase64 = reader.result.split(',')[1]; // strip "data:image/...;base64," prefix
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function handleScanClick() {
+      if (!currentPhotoBase64) {
+        alert('Upload or take a photo first.');
+        return;
+      }
+
+      const noteEl = document.getElementById('scanner-note');
+      noteEl.classList.remove('hidden');
+      noteEl.textContent = 'Analyzing your photo with Google Cloud Vision...';
+
+      const res = await fetch('/api/scan-food', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: currentPhotoBase64 })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        noteEl.textContent = 'Scan failed: ' + data.error;
+        return;
+      }
+
+      const existingResults = document.getElementById('scan-results');
+      if (existingResults) existingResults.remove();
+
+      if (data.matchedFoods.length === 0) {
+        noteEl.textContent = `Vision detected: ${data.labels.join(', ')} — but none matched our nutrition database closely. Log manually below instead.`;
+        openLogMeal();
+        return;
+      }
+
+      noteEl.textContent = `Vision detected: ${data.labels.slice(0, 5).join(', ')}. Matched to nutrition data below — pick one to log.`;
+
+      const resultDiv = document.createElement('div');
+      resultDiv.className = 'pill-grid';
+      resultDiv.id = 'scan-results';
+      data.matchedFoods.forEach(food => {
+        const pill = document.createElement('div');
+        pill.className = 'goal-pill';
+        pill.textContent = `${food.name} (${food.calories} kcal/100g)`;
+        pill.onclick = () => {
+          openLogMeal();
+          const select = document.getElementById('food-select');
+          const index = FOOD_DATABASE.findIndex(f => f.name === food.name);
+          if (index >= 0) select.value = index;
+          updateMealPreview();
+        };
+        resultDiv.appendChild(pill);
+      });
+
+      noteEl.after(resultDiv);
+    }
+
+    // ---------- NUTRITION LOG ----------
+    async function loadFoodLog() {
+      const res = await fetch('/api/food-log');
+      if (res.status === 401) { window.location.href = '/'; return; }
+      const data = await res.json();
+
+      document.getElementById('log-kcal-label').textContent = `Today: ${Math.round(data.totals.calories)} / ${dietTarget.calories} kcal`;
+      document.getElementById('bar-protein').textContent = `${Math.round(data.totals.protein)}/${dietTarget.protein} g`;
+      document.getElementById('bar-carbs').textContent = `${Math.round(data.totals.carbs)}/${dietTarget.carbs} g`;
+      document.getElementById('bar-fat').textContent = `${Math.round(data.totals.fat)}/${dietTarget.fat} g`;
+
+      const list = document.getElementById('meal-list');
+      list.innerHTML = '';
+      if (data.logs.length === 0) {
+        list.innerHTML = '<p class="subtext">No meals logged yet today.</p>';
+      }
+      data.logs.forEach(l => {
+        const time = new Date(l.logged_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        const item = document.createElement('div');
+        item.className = 'session-item';
+        item.innerHTML = `
+          <div>
+            <div class="session-name">${l.food_name} (${l.grams}g)</div>
+            <div class="summary-label">${time} · P ${Math.round(l.protein)}g · C ${Math.round(l.carbs)}g · F ${Math.round(l.fat)}g</div>
+          </div>
+          <div class="session-kcal">${Math.round(l.calories)} kcal</div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function populateFoodSelect() {
+      const select = document.getElementById('food-select');
+      select.innerHTML = '';
+      FOOD_DATABASE.forEach((f, i) => {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = f.name;
+        select.appendChild(opt);
+      });
+      updateMealPreview();
+    }
+
+    function updateMealPreview() {
+      const foodIndex = document.getElementById('food-select').value;
+      const grams = document.getElementById('food-grams').value || 0;
+      const food = FOOD_DATABASE[foodIndex];
+      if (!food) return;
+      const ratio = grams / 100;
+      const cal = Math.round(food.calories * ratio);
+      const p = Math.round(food.protein * ratio);
+      const c = Math.round(food.carbs * ratio);
+      const f = Math.round(food.fat * ratio);
+      document.getElementById('meal-preview').textContent = `${cal} kcal · P ${p}g · C ${c}g · F ${f}g`;
+    }
+
+    function openLogMeal() {
+      populateFoodSelect();
+      document.getElementById('meal-modal').classList.remove('hidden');
+      document.getElementById('food-grams').value = '';
+      document.getElementById('meal-message').textContent = '';
+    }
+    function closeLogMeal() {
+      document.getElementById('meal-modal').classList.add('hidden');
+    }
+
+    async function submitMeal() {
+      const foodIndex = document.getElementById('food-select').value;
+      const grams = document.getElementById('food-grams').value;
+      const food = FOOD_DATABASE[foodIndex];
+
+      if (!grams || grams <= 0) {
+        document.getElementById('meal-message').textContent = 'Enter a valid amount in grams.';
+        return;
+      }
+
+      const ratio = grams / 100;
+      const payload = {
+        food_name: food.name,
+        grams: Number(grams),
+        calories: food.calories * ratio,
+        protein: food.protein * ratio,
+        carbs: food.carbs * ratio,
+        fat: food.fat * ratio
+      };
+
+      const res = await fetch('/api/food-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        closeLogMeal();
+        loadFoodLog();
+      } else {
+        document.getElementById('meal-message').textContent = data.error;
+      }
+    }
+
+    // ---------- NUTRITION AI ----------
+    function addIngredientTag() {
+      const input = document.getElementById('ai-ingredient-input');
+      const text = input.value.trim();
+      if (!text) return;
+      ingredientTags.push(text);
+      input.value = '';
+      renderIngredientTags();
+    }
+
+    function renderIngredientTags() {
+      const container = document.getElementById('ingredient-tags');
+      container.innerHTML = '';
+      ingredientTags.forEach((tag, i) => {
+        const pill = document.createElement('div');
+        pill.className = 'goal-pill selected';
+        pill.textContent = tag + ' ✕';
+        pill.onclick = () => { ingredientTags.splice(i, 1); renderIngredientTags(); };
+        container.appendChild(pill);
+      });
+    }
+
+    function generateFromIngredients() {
+      if (ingredientTags.length === 0) {
+        alert('Add at least one ingredient first.');
+        return;
+      }
+
+      let matched = [];
+      let totals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+
+      ingredientTags.forEach(tag => {
+        const found = FOOD_DATABASE.find(f => f.name.toLowerCase().includes(tag.toLowerCase()));
+        if (found) {
+          matched.push(found.name);
+          totals.calories += found.calories;
+          totals.protein += found.protein;
+          totals.carbs += found.carbs;
+          totals.fat += found.fat;
+        }
+      });
+
+      const resultDiv = document.getElementById('ai-result');
+      if (matched.length === 0) {
+        resultDiv.innerHTML = `<p class="subtext">None of those ingredients matched our nutrition database. Try common items like chicken, rice, eggs, oats, banana, dal, roti.</p>`;
+        return;
+      }
+
+      resultDiv.innerHTML = `
+        <div class="meal-slot">
+          <div class="session-name">Meal using: ${matched.join(', ')}</div>
+          <div class="summary-label">Assuming ~100g of each · ${Math.round(totals.calories)} kcal · P ${Math.round(totals.protein)}g · C ${Math.round(totals.carbs)}g · F ${Math.round(totals.fat)}g</div>
+        </div>
+      `;
+    }
+
+    async function signOut() {
+      await fetch('/logout', { method: 'POST' });
+      window.location.href = '/';
+    }
+
+    document.getElementById('food-select').addEventListener('change', updateMealPreview);
+    document.getElementById('food-grams').addEventListener('input', updateMealPreview);
+
+    async function init() {
+      await loadTarget();
+    }
+    init();
+  </script>
+
+</body>
+</html>

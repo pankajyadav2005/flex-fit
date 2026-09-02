@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FlexFit - Workout</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-layout">
+
+    <div class="sidebar">
+      <div class="sidebar-logo">🏋️ FlexFit AI</div>
+      <nav class="sidebar-nav">
+        <a href="/dashboard.html">📊 Dashboard</a>
+        <a href="/workout.html" class="active">🏋️ Workout</a>
+        <a href="/food.html">🍽️ Food</a>
+        <a href="/cardio.html">📈 Cardio</a>
+        <a href="/jiya.html">💬 Jiya AI</a>
+        <a href="/progress.html">📈 Progress</a>
+        <a href="/profile.html">👤 Profile</a>
+      </nav>
+      <a href="#" class="sidebar-signout" onclick="signOut()">↩ Sign Out</a>
+    </div>
+
+    <div class="main-content">
+      <div class="workout-page">
+
+        <h1>Workout</h1>
+        <p class="subtext">Your weekly split and a curated exercise library.</p>
+
+        <div class="category-tabs">
+          <button class="category-tab active" id="tab-split" onclick="switchView('split')">Weekly Split</button>
+          <button class="category-tab" id="tab-library" onclick="switchView('library')">Exercise Library</button>
+        </div>
+
+        <!-- WEEKLY SPLIT VIEW -->
+        <div id="view-split">
+          <div class="panel-header">
+            <span id="tailored-label">Tailored to: --</span>
+            <button class="btn-secondary" onclick="regenerateSplit()">🔄 AI Regenerate</button>
+          </div>
+          <div id="day-grid" class="card-grid three-col"></div>
+        </div>
+
+        <!-- EXERCISE LIBRARY VIEW -->
+        <div id="view-library" class="hidden">
+          <input type="text" id="exercise-search" placeholder="Search exercises..." oninput="renderExercises()">
+          <div id="muscle-tabs" class="category-tabs" style="margin-top:14px;"></div>
+          <div id="exercise-grid" class="exercise-grid"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="workoutData.js"></script>
+  <script>
+    let currentTemplate = 'Full Body';
+    let currentTemplateIndex = 0;
+    const templateNames = Object.keys(WEEKLY_TEMPLATES);
+    let completions = [];
+    let activeMuscle = null;
+
+    const TODAY_NAME = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()];
+
+    function switchView(view) {
+      document.getElementById('view-split').classList.toggle('hidden', view !== 'split');
+      document.getElementById('view-library').classList.toggle('hidden', view !== 'library');
+      document.getElementById('tab-split').classList.toggle('active', view === 'split');
+      document.getElementById('tab-library').classList.toggle('active', view === 'library');
+      if (view === 'library' && document.getElementById('exercise-grid').innerHTML === '') {
+        renderMuscleTabs();
+        renderExercises();
+      }
+    }
+
+    async function loadWorkout() {
+      const res = await fetch('/api/workout');
+      if (res.status === 401) { window.location.href = '/'; return; }
+      const data = await res.json();
+      currentTemplate = data.templateName;
+      currentTemplateIndex = templateNames.indexOf(currentTemplate);
+      completions = data.completions;
+      document.getElementById('tailored-label').textContent = `Tailored to: ${currentTemplate === 'Full Body' ? 'general fitness' : 'push pull legs'}`;
+      renderDays();
+    }
+
+    function regenerateSplit() {
+      // Rule-based: cycles to the next template rather than random AI generation
+      currentTemplateIndex = (currentTemplateIndex + 1) % templateNames.length;
+      currentTemplate = templateNames[currentTemplateIndex];
+      document.getElementById('tailored-label').textContent = `Tailored to: ${currentTemplate === 'Full Body' ? 'general fitness' : 'push pull legs'}`;
+      renderDays();
+    }
+
+    function renderDays() {
+      const grid = document.getElementById('day-grid');
+      grid.innerHTML = '';
+      const days = WEEKLY_TEMPLATES[currentTemplate];
+
+      days.forEach(d => {
+        const isToday = d.day === TODAY_NAME;
+        const isDone = completions.some(c => c.day_name === d.day);
+        const card = document.createElement('div');
+        card.className = 'day-card' + (isToday ? ' today' : '');
+        card.innerHTML = `
+          ${isToday ? '<span class="today-badge">Today</span>' : ''}
+          <div class="day-icon">${d.icon}</div>
+          <div class="day-label">${d.day.toUpperCase()}</div>
+          <div class="day-workout-name">${d.name}</div>
+          <div class="summary-label">${d.rest ? d.note : d.muscles.join(', ')}</div>
+          ${!d.rest ? `<a href="#" class="view-exercises-link" onclick="viewDayExercises(event, '${d.muscles.join(",")}')">View Exercises →</a>` : ''}
+          ${!d.rest && isToday ? `<button class="btn-primary complete-btn" ${isDone ? 'disabled' : ''} onclick="markComplete('${d.day}','${d.name}')">${isDone ? '✓ Completed' : 'Mark Complete'}</button>` : ''}
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function viewDayExercises(e, musclesStr) {
+      e.preventDefault();
+      switchView('library');
+      const muscles = musclesStr.split(',');
+      activeMuscle = muscles[0];
+      renderMuscleTabs();
+      renderExercises();
+    }
+
+    async function markComplete(day, workoutName) {
+      const res = await fetch('/api/workout/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ day_name: day, workout_name: workoutName })
+      });
+      if (res.ok) {
+        completions.push({ day_name: day, workout_name: workoutName });
+        renderDays();
+      }
+    }
+
+    // ---------- EXERCISE LIBRARY ----------
+    function renderMuscleTabs() {
+      const container = document.getElementById('muscle-tabs');
+      container.innerHTML = '';
+      if (!activeMuscle) activeMuscle = MUSCLE_GROUPS[0];
+      MUSCLE_GROUPS.forEach(m => {
+        const btn = document.createElement('button');
+        btn.className = 'category-tab' + (m === activeMuscle ? ' active' : '');
+        btn.textContent = m;
+        btn.onclick = () => { activeMuscle = m; renderMuscleTabs(); renderExercises(); };
+        container.appendChild(btn);
+      });
+    }
+
+    function renderExercises() {
+      const searchTerm = document.getElementById('exercise-search').value.toLowerCase();
+      const grid = document.getElementById('exercise-grid');
+      grid.innerHTML = '';
+
+      let filtered = EXERCISE_LIBRARY.filter(ex => {
+        const matchesSearch = !searchTerm || ex.name.toLowerCase().includes(searchTerm);
+        const matchesMuscle = !searchTerm && activeMuscle ? ex.muscles.includes(activeMuscle) : true;
+        return searchTerm ? matchesSearch : matchesMuscle;
+      });
+
+      filtered.forEach(ex => {
+        const card = document.createElement('div');
+        card.className = 'exercise-card';
+        const difficultyClass = 'diff-' + ex.difficulty.toLowerCase();
+        card.innerHTML = `
+          <div class="exercise-header">
+            <strong>${ex.name}</strong>
+            <span class="diff-badge ${difficultyClass}">${ex.difficulty}</span>
+          </div>
+          <div class="summary-label">${ex.sets} × ${ex.reps} · ⏱ ${ex.restSeconds}s rest</div>
+          <div class="pill-grid exercise-tags">
+            ${ex.muscles.map(m => `<span class="mini-tag">${m}</span>`).join('')}
+          </div>
+          <details class="how-to">
+            <summary>How to do it</summary>
+            <p>${ex.howTo}</p>
+          </details>
+          <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name + ' exercise form')}" target="_blank" class="watch-demo-link">▶ Watch demo</a>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    async function signOut() {
+      await fetch('/logout', { method: 'POST' });
+      window.location.href = '/';
+    }
+
+    loadWorkout();
+  </script>
+
+</body>
+</html>

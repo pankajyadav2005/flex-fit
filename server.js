@@ -5,10 +5,11 @@ const session = require('express-session');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const db = require('./db');
+const FOOD_DATABASE = require('./foodDatabase');
 
 const app = express();
 
-app.use(express.json());               // lets us read JSON sent from the browser
+app.use(express.json({ limit: '10mb' }));  // increased limit to allow base64 photo uploads
 app.use(express.static('public'));     // serves index.html, style.css, etc.
 app.use(session({
   secret: 'flexfit-secret-key',        // used to sign the session cookie
@@ -46,7 +47,7 @@ app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'em
 app.get('/auth/google/callback',
   passport.authenticate('google', { failureRedirect: '/' }),
   (req, res) => {
-    res.redirect('/');
+    res.redirect('/dashboard.html');
   }
 );
 
@@ -200,14 +201,187 @@ app.post('/api/cardio', requireLogin, (req, res) => {
   res.json({ message: 'Session saved' });
 });
 
-// GET summary stats for the Progress page
+// GET calorie/macro target - real TDEE formula using saved profile
+app.get('/api/food/target', requireLogin, (req, res) => {
+  const profile = db.prepare('SELECT * FROM profiles WHERE user_id = ?').get(req.currentUserId);
+
+  if (!profile || !profile.weight || !profile.height || !profile.age) {
+    return res.json({ calories: 0, protein: 0, carbs: 0, fat: 0, hasProfile: false });
+  }
+
+  // Mifflin-St Jeor formula (simplified average, since we don't collect gender)
+  const bmr = 10 * profile.weight + 6.25 * profile.height - 5 * profile.age - 78;
+
+  const activityMultiplier = {
+    Beginner: 1.2,
+    Intermediate: 1.375,
+    Advanced: 1.55,
+    Elite: 1.725
+  }[profile.fitness_level] || 1.2;
+
+  const calories = Math.round(bmr * activityMultiplier);
+  const protein = Math.round((calories * 0.3) / 4);
+  const carbs = Math.round((calories * 0.4) / 4);
+  const fat = Math.round((calories * 0.3) / 9);
+
+  res.json({ calories, protein, carbs, fat, hasProfile: true });
+});
+
+// GET today's food log + totals
+app.get('/api/food-log', requireLogin, (req, res) => {
+  const logs = db.prepare(`
+    SELECT * FROM food_logs
+    WHERE user_id = ? AND date(logged_at) = date('now')
+    ORDER BY logged_at ASC
+  `).all(req.currentUserId);
+
+  const totals = logs.reduce((acc, l) => ({
+    calories: acc.calories + l.calories,
+    protein: acc.protein + l.protein,
+    carbs: acc.carbs + l.carbs,
+    fat: acc.fat + l.fat
+  }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+  res.json({ logs, totals });
+});
+
+// POST a logged meal (food + quantity, macros calculated from real per-100g data)
+app.post('/api/food-log', requireLogin, (req, res) => {
+  const { food_name, grams, calories, protein, carbs, fat } = req.body;
+
+  if (!food_name || !grams || grams <= 0) {
+    return res.status(400).json({ error: 'Invalid meal data' });
+  }
+
+  db.prepare(`
+    INSERT INTO food_logs (user_id, food_name, grams, calories, protein, carbs, fat)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(req.currentUserId, food_name, grams, calories, protein, carbs, fat);
+
+  res.json({ message: 'Meal logged' });
+});
+
+// POST a photo for real AI food scanning via Google Cloud Vision
+app.post('/api/scan-food', requireLogin, async (req, res) => {
+  const { image } = req.body; // base64-encoded image data (no data:image/... prefix)
+
+  if (!image) {
+    return res.status(400).json({ error: 'No image provided' });
+  }
+
+  try {
+    const visionResponse = await fetch(
+      `https://vision.googleapis.com/v1/images:annotate?key=${process.env.GOOGLE_VISION_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requests: [{
+            image: { content: image },
+            features: [{ type: 'LABEL_DETECTION', maxResults: 10 }]
+          }]
+        })
+      }
+    );
+
+    const data = await visionResponse.json();
+
+    if (data.error) {
+      return res.status(500).json({ error: 'Vision API error: ' + data.error.message });
+    }
+
+    const labels = data.responses[0]?.labelAnnotations?.map(l => l.description) || [];
+
+    // Match Vision API labels against our real nutrition database
+    const matchedFoods = [];
+    labels.forEach(label => {
+      const found = FOOD_DATABASE.find(f =>
+        f.name.toLowerCase().includes(label.toLowerCase()) ||
+        label.toLowerCase().includes(f.name.toLowerCase().split(' ')[0])
+      );
+      if (found && !matchedFoods.some(m => m.name === found.name)) {
+        matchedFoods.push(found);
+      }
+    });
+
+    res.json({ labels, matchedFoods });
+
+  } catch (err) {
+    res.status(500).json({ error: 'Vision API request failed: ' + err.message });
+  }
+});
+
+// GET workout template + this week's completion status
+app.get('/api/workout', requireLogin, (req, res) => {
+  const profile = db.prepare('SELECT * FROM profiles WHERE user_id = ?').get(req.currentUserId);
+  const templateName = (profile && (profile.fitness_level === 'Advanced' || profile.fitness_level === 'Elite'))
+    ? 'Push Pull Legs' : 'Full Body';
+
+  // Get completions from the last 7 days
+  const completions = db.prepare(`
+    SELECT day_name, workout_name FROM workout_logs
+    WHERE user_id = ? AND logged_at >= date('now', '-7 days')
+  `).all(req.currentUserId);
+
+  res.json({ templateName, completions });
+});
+
+// POST mark a workout as complete
+app.post('/api/workout/complete', requireLogin, (req, res) => {
+  const { day_name, workout_name } = req.body;
+
+  if (!day_name || !workout_name) {
+    return res.status(400).json({ error: 'Missing workout info' });
+  }
+
+  const already = db.prepare(`
+    SELECT id FROM workout_logs WHERE user_id = ? AND day_name = ? AND logged_at = date('now')
+  `).get(req.currentUserId, day_name);
+
+  if (already) {
+    return res.json({ message: 'Already marked complete today' });
+  }
+
+  db.prepare('INSERT INTO workout_logs (user_id, day_name, workout_name) VALUES (?, ?, ?)')
+    .run(req.currentUserId, day_name, workout_name);
+
+  res.json({ message: 'Workout marked complete' });
+});
+
+// GET dashboard overview - combines data from all features for the landing page
+app.get('/api/dashboard', requireLogin, (req, res) => {
+  const profile = db.prepare('SELECT * FROM profiles WHERE user_id = ?').get(req.currentUserId);
+  const user = db.prepare('SELECT name FROM users WHERE id = ?').get(req.currentUserId);
+
+  const latestWeight = db.prepare('SELECT * FROM weight_logs WHERE user_id = ? ORDER BY logged_at DESC LIMIT 1').get(req.currentUserId);
+  const cardioTotals = db.prepare('SELECT COALESCE(SUM(calories),0) as totalKcal FROM cardio_sessions WHERE user_id = ? AND logged_at >= date(\'now\', \'-7 days\')').get(req.currentUserId);
+  const workoutsThisWeek = db.prepare('SELECT COUNT(*) as count FROM workout_logs WHERE user_id = ? AND logged_at >= date(\'now\', \'-7 days\')').get(req.currentUserId);
+  const todaysFood = db.prepare('SELECT COALESCE(SUM(calories),0) as totalKcal FROM food_logs WHERE user_id = ? AND date(logged_at) = date(\'now\')').get(req.currentUserId);
+
+  res.json({
+    userName: user.name,
+    hasProfile: !!profile,
+    fitnessLevel: profile ? profile.fitness_level : null,
+    latestWeight: latestWeight ? latestWeight.weight : null,
+    targetWeight: profile ? profile.target_weight : null,
+    caloriesBurnedThisWeek: Math.round(cardioTotals.totalKcal),
+    workoutsThisWeek: workoutsThisWeek.count,
+    foodLoggedToday: Math.round(todaysFood.totalKcal)
+  });
+});
+
+// GET summary stats for the Progress page (now uses real workout completion data)
 app.get('/api/summary', requireLogin, (req, res) => {
   const weightCount = db.prepare('SELECT COUNT(*) as count FROM weight_logs WHERE user_id = ?').get(req.currentUserId).count;
   const cardioTotals = db.prepare('SELECT COALESCE(SUM(calories),0) as totalKcal FROM cardio_sessions WHERE user_id = ?').get(req.currentUserId);
+  const workoutsThisWeek = db.prepare(`
+    SELECT COUNT(*) as count FROM workout_logs
+    WHERE user_id = ? AND logged_at >= date('now', '-7 days')
+  `).get(req.currentUserId).count;
 
   res.json({
-    totalWorkouts: 0,      // will connect once Workout page exists
-    completedWorkouts: 0,  // will connect once Workout page exists
+    totalWorkouts: 5, // 5 non-rest days in the standard weekly template
+    completedWorkouts: workoutsThisWeek,
     caloriesBurned: Math.round(cardioTotals.totalKcal),
     weightEntries: weightCount
   });

@@ -48,4 +48,28 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id)
   )
 `);
+db.exec(`
+  CREATE TABLE IF NOT EXISTS food_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    food_name TEXT NOT NULL,
+    grams REAL NOT NULL,
+    calories REAL NOT NULL,
+    protein REAL NOT NULL,
+    carbs REAL NOT NULL,
+    fat REAL NOT NULL,
+    logged_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  )
+`);
+db.exec(`
+  CREATE TABLE IF NOT EXISTS workout_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    day_name TEXT NOT NULL,
+    workout_name TEXT NOT NULL,
+    logged_at DATE DEFAULT CURRENT_DATE,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  )
+`);
 module.exports = db;

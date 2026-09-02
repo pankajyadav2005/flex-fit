@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FlexFit - Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-layout">
+
+    <div class="sidebar">
+      <div class="sidebar-logo">🏋️ FlexFit AI</div>
+      <nav class="sidebar-nav">
+        <a href="/dashboard.html" class="active">📊 Dashboard</a>
+        <a href="/workout.html">🏋️ Workout</a>
+        <a href="/food.html">🍽️ Food</a>
+        <a href="/cardio.html">📈 Cardio</a>
+        <a href="/jiya.html">💬 Jiya AI</a>
+        <a href="/progress.html">📈 Progress</a>
+        <a href="/profile.html">👤 Profile</a>
+      </nav>
+      <a href="#" class="sidebar-signout" onclick="signOut()">↩ Sign Out</a>
+    </div>
+
+    <div class="main-content">
+      <div class="profile-page">
+
+        <h2 id="welcome-heading">Welcome back 👋</h2>
+        <p class="subtext" id="welcome-sub">Here's where you stand today.</p>
+
+        <div id="no-profile-banner" class="card-panel hidden">
+          <p>You haven't set up your profile yet.</p>
+          <div class="button-row right">
+            <button class="btn-primary" onclick="window.location.href='/profile.html'">Set up profile →</button>
+          </div>
+        </div>
+
+        <div id="dashboard-content" class="hidden">
+
+          <div class="card-grid" id="stats-grid">
+            <div class="sport-card">
+              <div class="sport-icon">🔥</div>
+              <div class="sport-name" id="stat-calories-burned">-</div>
+              <div class="sport-goals-count">Calories burned (cardio)</div>
+            </div>
+            <div class="sport-card">
+              <div class="sport-icon">🍽️</div>
+              <div class="sport-name" id="stat-calories-eaten">-</div>
+              <div class="sport-goals-count">Calories eaten today</div>
+            </div>
+            <div class="sport-card">
+              <div class="sport-icon">⚖️</div>
+              <div class="sport-name" id="stat-weight">-</div>
+              <div class="sport-goals-count">Current weight (kg)</div>
+            </div>
+            <div class="sport-card">
+              <div class="sport-icon">📉</div>
+              <div class="sport-name" id="stat-weight-entries">-</div>
+              <div class="sport-goals-count">Weight log entries</div>
+            </div>
+          </div>
+
+          <div class="card-panel">
+            <div class="panel-header">
+              <h2>Today's Food</h2>
+            </div>
+            <p class="subtext" id="food-progress-text">Loading...</p>
+          </div>
+
+          <div class="card-panel">
+            <div class="panel-header">
+              <h2>Your Sports</h2>
+            </div>
+            <div id="sports-list" class="pill-grid"></div>
+          </div>
+
+          <div class="card-panel">
+            <div class="panel-header">
+              <h2>Your Goals</h2>
+            </div>
+            <div id="goals-list" class="pill-grid"></div>
+          </div>
+
+          <div class="card-panel">
+            <div class="panel-header">
+              <h2>Quick Links</h2>
+            </div>
+            <div class="button-row" style="gap:12px; flex-wrap:wrap;">
+              <button class="btn-secondary" onclick="window.location.href='/workout.html'">🏋️ Log a workout</button>
+              <button class="btn-secondary" onclick="window.location.href='/food.html'">🍽️ Log food</button>
+              <button class="btn-secondary" onclick="window.location.href='/cardio.html'">📈 Start cardio</button>
+              <button class="btn-secondary" onclick="window.location.href='/jiya.html'">💬 Ask Jiya AI</button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function loadDashboard() {
+      const res = await fetch('/api/profile');
+      if (res.status === 401) {
+        window.location.href = '/';
+        return;
+      }
+      const data = await res.json();
+
+      if (!data || !data.sports || data.sports.length === 0) {
+        document.getElementById('no-profile-banner').classList.remove('hidden');
+        return;
+      }
+
+      document.getElementById('dashboard-content').classList.remove('hidden');
+
+      document.getElementById('stat-weight').textContent = data.weight || '-';
+
+      // Summary stats (weight entries, cardio calories burned)
+      const summaryRes = await fetch('/api/summary');
+      const summary = await summaryRes.json();
+      document.getElementById('stat-calories-burned').textContent = summary.caloriesBurned || 0;
+      document.getElementById('stat-weight-entries').textContent = summary.weightEntries || 0;
+
+      // Food target + today's log
+      const targetRes = await fetch('/api/food/target');
+      const target = await targetRes.json();
+      const logRes = await fetch('/api/food-log');
+      const foodLog = await logRes.json();
+
+      document.getElementById('stat-calories-eaten').textContent = Math.round(foodLog.totals.calories) || 0;
+
+      const foodText = document.getElementById('food-progress-text');
+      if (target.hasProfile) {
+        const remaining = Math.round(target.calories - foodLog.totals.calories);
+        foodText.textContent = `${Math.round(foodLog.totals.calories)} / ${target.calories} kcal — ${remaining >= 0 ? remaining + ' kcal remaining' : Math.abs(remaining) + ' kcal over'}`;
+      } else {
+        foodText.textContent = 'Complete your profile to see your daily calorie target.';
+      }
+
+      const sportsList = document.getElementById('sports-list');
+      sportsList.innerHTML = '';
+      (data.sports || []).forEach(sport => {
+        const pill = document.createElement('div');
+        pill.className = 'goal-pill selected';
+        pill.textContent = sport;
+        sportsList.appendChild(pill);
+      });
+
+      const goalsList = document.getElementById('goals-list');
+      goalsList.innerHTML = '';
+      (data.goals || []).forEach(goal => {
+        const pill = document.createElement('div');
+        pill.className = 'goal-pill selected';
+        pill.textContent = goal;
+        goalsList.appendChild(pill);
+      });
+    }
+
+    async function signOut() {
+      await fetch('/logout', { method: 'POST' });
+      window.location.href = '/';
+    }
+
+    loadDashboard();
+  </script>
+
+</body>
+</html>

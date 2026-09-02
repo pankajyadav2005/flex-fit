@@ -693,3 +693,231 @@ body {
 .session-day-header:first-child {
   margin-top: 0;
 }
+/* FOOD PAGE */
+.food-page {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.food-tabs {
+  margin-bottom: 20px;
+}
+
+.meal-slot {
+  border: 1px solid #e5e0da;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+
+.meal-slot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.meal-swap-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+.macro-bars {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.macro-bar {
+  background: #faf6f1;
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+}
+
+#meal-modal select,
+#meal-modal input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e5e0da;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.ai-input-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.ai-input-row input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #e5e0da;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+#ai-result {
+  margin-top: 16px;
+}
+
+/* WORKOUT PAGE */
+.workout-page {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.card-grid.three-col {
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 16px;
+}
+
+.day-card {
+  border: 1px solid #e5e0da;
+  border-radius: 12px;
+  padding: 18px;
+  position: relative;
+  background: white;
+}
+
+.day-card.today {
+  border-color: #e8623d;
+  border-width: 2px;
+}
+
+.today-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: #fef3ee;
+  color: #e8623d;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+.day-icon {
+  font-size: 20px;
+  margin-bottom: 6px;
+}
+
+.day-label {
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: #999;
+  font-weight: 600;
+}
+
+.day-workout-name {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 2px 0 4px;
+}
+
+.view-exercises-link {
+  display: block;
+  margin-top: 10px;
+  font-size: 13px;
+  color: #1a1a1a;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.view-exercises-link:hover {
+  color: #e8623d;
+}
+
+.complete-btn {
+  margin-top: 10px;
+  width: 100%;
+  font-size: 13px;
+  padding: 8px;
+}
+
+.complete-btn:disabled {
+  background: #c8c8c8;
+  cursor: default;
+}
+
+/* EXERCISE LIBRARY */
+#exercise-search {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e5e0da;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.exercise-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.exercise-card {
+  background: white;
+  border: 1px solid #e5e0da;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.exercise-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.diff-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 10px;
+}
+
+.diff-beginner { background: #e3f5e8; color: #2a9d55; }
+.diff-intermediate { background: #fef3e0; color: #d68b1f; }
+.diff-advanced { background: #fde8e8; color: #d63a3a; }
+
+.exercise-tags {
+  margin: 8px 0;
+  gap: 6px;
+}
+
+.mini-tag {
+  background: #faf6f1;
+  border-radius: 12px;
+  padding: 3px 10px;
+  font-size: 11px;
+  color: #666;
+}
+
+.how-to {
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.how-to summary {
+  cursor: pointer;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.how-to p {
+  color: #666;
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+.watch-demo-link {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 13px;
+  color: #e8623d;
+  text-decoration: none;
+}
