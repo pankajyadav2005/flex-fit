@@ -416,7 +416,8 @@ app.post('/api/jiya', requireLogin, (req, res) => {
   res.json({ reply });
 });
 
-const PORT = 3000;
-app.listen(PORT, () => {
-  console.log(`FlexFit server running at http://localhost:${PORT}`);
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`FlexFit server running on port ${PORT}`);
 });
