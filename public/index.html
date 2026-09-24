@@ -1,92 +1,448 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>FlexFit</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlexFit AI — Sign in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="auth.css">
 </head>
 <body>
 
-  <div class="auth-box">
-    <h1>FlexFit</h1>
+<div class="ffa-page">
 
-    <div id="signup-form">
-      <h2>Sign Up</h2>
-      <input type="text" id="signup-name" placeholder="Name">
-      <input type="email" id="signup-email" placeholder="Email">
-      <input type="password" id="signup-password" placeholder="Password" oninput="checkPassword()">
-      <ul id="password-rules">
-      <li id="rule-length">At least 8 characters</li>
-      <li id="rule-special">Contains a special symbol (!@#$%^&*)</li>
-      </ul>
-      <button onclick="signup()">Create Account</button>
-      <p id="signup-message"></p>
+  <!-- ==================== LEFT: BRANDING ==================== -->
+  <section class="ffa-brand">
+    <div class="ffa-brand-glow" aria-hidden="true"></div>
+    <svg class="ffa-dotgrid" aria-hidden="true"></svg>
+    <svg class="ffa-pulse" viewBox="0 0 600 140" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 70 H180 L205 30 L235 110 L260 55 L280 70 H600"
+            fill="none" stroke="#ff9d6e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+
+    <div class="ffa-logo">
+      <span class="ffa-logo-mark">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M4 12h3M17 12h3M7 8v8M17 8v8M7 12h10" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+      </span>
+      FlexFit AI
     </div>
 
-    <hr>
+    <div class="ffa-brand-mid">
+      <span class="ffa-badge"><span class="ffa-badge-dot" aria-hidden="true"></span>Smart Fitness Assistant</span>
+      <h1>Train smarter.<br>Feel stronger.</h1>
+      <p>FlexFit AI plans your workouts, tracks your nutrition, and adjusts your program as your progress changes — so every session is the right one for today.</p>
 
-    <div id="login-form">
-      <h2>Log In</h2>
-      <input type="email" id="login-email" placeholder="Email">
-      <input type="password" id="login-password" placeholder="Password">
-      <button onclick="login()">Log In</button>
-      <p id="login-message"></p>
+      <div class="ffa-stats">
+        <div class="ffa-stat">
+          <span class="ffa-stat-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/></svg>
+          </span>
+          <span class="ffa-stat-text">24/7 fitness guidance</span>
+        </div>
+        <div class="ffa-stat">
+          <span class="ffa-stat-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l2.4 5.2L20 9l-4 4 1 5.6L12 16l-5 2.6 1-5.6-4-4 5.6-.8L12 3z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="ffa-stat-text">AI-built personal plans</span>
+        </div>
+        <div class="ffa-stat">
+          <span class="ffa-stat-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 19V10M11 19V5M18 19v-7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          </span>
+          <span class="ffa-stat-text">Your progress, tracked</span>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <script>
-  function checkPassword() {
-    const password = document.getElementById('signup-password').value;
-    const lengthOk = password.length >= 8;
-    const specialOk = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-    const lengthRule = document.getElementById('rule-length');
-    const specialRule = document.getElementById('rule-special');
-    lengthRule.style.color = lengthOk ? 'green' : 'red';
-    specialRule.style.color = specialOk ? 'green' : 'red';
+    <p class="ffa-brand-foot">© 2026 FlexFit AI</p>
+  </section>
+
+  <!-- ==================== RIGHT: AUTH ==================== -->
+  <section class="ffa-auth">
+    <div class="ffa-auth-inner">
+
+      <div class="ffa-auth-head">
+        <h2 id="ffa-heading">Welcome back</h2>
+        <p id="ffa-subheading">Sign in to pick up your training plan where you left off.</p>
+      </div>
+
+      <div class="ffa-tabs" data-active="login" role="tablist" aria-label="Authentication method">
+        <div class="ffa-tab-indicator" aria-hidden="true"></div>
+        <button type="button" class="ffa-tab is-active" id="tab-login" role="tab" aria-selected="true" aria-controls="login-form" onclick="ffaSwitchTab('login')">Log In</button>
+        <button type="button" class="ffa-tab" id="tab-signup" role="tab" aria-selected="false" aria-controls="signup-form" onclick="ffaSwitchTab('signup')">Sign Up</button>
+      </div>
+
+      <!-- ---------- LOG IN ---------- -->
+      <form class="ffa-form" id="login-form" role="tabpanel" aria-labelledby="tab-login" onsubmit="event.preventDefault(); login();">
+        <div class="ffa-field">
+          <label for="login-email">Email address</label>
+          <div class="ffa-input-wrap">
+            <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email"
+                   oninput="ffaValidateEmail('login-email','login-email-msg')">
+          </div>
+          <p class="ffa-field-msg" id="login-email-msg"></p>
+        </div>
+
+        <div class="ffa-field">
+          <label for="login-password">Password</label>
+          <div class="ffa-input-wrap">
+            <input type="password" id="login-password" class="has-icon" placeholder="Enter your password" autocomplete="current-password">
+            <button type="button" class="ffa-icon-btn" aria-label="Show password" onclick="ffaTogglePassword('login-password', this)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="ffa-row">
+          <label class="ffa-remember">
+            <input type="checkbox" id="login-remember">
+            Remember me
+          </label>
+          <a href="#" class="ffa-link" id="forgot-link" onclick="ffaForgotPassword(event)">Forgot password?</a>
+        </div>
+        <p class="ffa-reset-note" id="forgot-note" hidden>We don't have password reset wired up yet — reach out to support and we'll help you back in.</p>
+
+        <p class="ffa-form-message" id="login-message" aria-live="polite"></p>
+
+        <button type="submit" class="ffa-submit" id="login-submit">
+          <span class="ffa-spinner" aria-hidden="true"></span>
+          <span class="ffa-submit-label">Log In →</span>
+        </button>
+
+        <div class="ffa-divider">or continue with</div>
+        <a href="/auth/google" class="ffa-google">
+          <svg width="16" height="16" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.9v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.16.28-1.7V4.97H.9A9 9 0 0 0 0 9c0 1.45.35 2.83.9 4.03l3.05-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .9 4.97l3.05 2.33C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
+          Continue with Google
+        </a>
+      </form>
+
+      <!-- ---------- SIGN UP ---------- -->
+      <form class="ffa-form" id="signup-form" role="tabpanel" aria-labelledby="tab-signup" hidden onsubmit="event.preventDefault(); signup();">
+        <div class="ffa-field">
+          <label for="signup-name">Full name</label>
+          <div class="ffa-input-wrap">
+            <input type="text" id="signup-name" placeholder="Alex Rivera" autocomplete="name">
+          </div>
+        </div>
+
+        <div class="ffa-field">
+          <label for="signup-email">Email</label>
+          <div class="ffa-input-wrap">
+            <input type="email" id="signup-email" placeholder="you@example.com" autocomplete="email"
+                   oninput="ffaValidateEmail('signup-email','signup-email-msg')">
+          </div>
+          <p class="ffa-field-msg" id="signup-email-msg"></p>
+        </div>
+
+        <div class="ffa-field">
+          <label for="signup-password">Password</label>
+          <div class="ffa-input-wrap">
+            <input type="password" id="signup-password" class="has-icon" placeholder="Create a password" autocomplete="new-password" oninput="checkPassword()">
+            <button type="button" class="ffa-icon-btn" aria-label="Show password" onclick="ffaTogglePassword('signup-password', this)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/></svg>
+            </button>
+          </div>
+
+          <div class="ffa-strength" id="strength-wrap" hidden>
+            <div class="ffa-strength-track">
+              <span class="ffa-strength-seg" id="seg-1"></span>
+              <span class="ffa-strength-seg" id="seg-2"></span>
+              <span class="ffa-strength-seg" id="seg-3"></span>
+            </div>
+            <span class="ffa-strength-label" id="strength-label">Password strength</span>
+          </div>
+
+          <ul id="password-rules" class="ffa-rules">
+            <li id="rule-length">At least 8 characters</li>
+            <li id="rule-number">Contains a number</li>
+            <li id="rule-special">Contains a special symbol (!@#$%^&amp;*)</li>
+          </ul>
+        </div>
+
+        <div class="ffa-field">
+          <label for="signup-confirm">Confirm password</label>
+          <div class="ffa-input-wrap">
+            <input type="password" id="signup-confirm" class="has-icon" placeholder="Re-enter your password" autocomplete="new-password" oninput="ffaCheckMatch()">
+            <button type="button" class="ffa-icon-btn" aria-label="Show password" onclick="ffaTogglePassword('signup-confirm', this)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/></svg>
+            </button>
+          </div>
+          <p class="ffa-field-msg" id="confirm-msg"></p>
+        </div>
+
+        <p class="ffa-form-message" id="signup-message" aria-live="polite"></p>
+
+        <button type="submit" class="ffa-submit" id="signup-submit">
+          <span class="ffa-spinner" aria-hidden="true"></span>
+          <span class="ffa-submit-label">Create My Account →</span>
+        </button>
+
+        <div class="ffa-divider">or continue with</div>
+        <a href="/auth/google" class="ffa-google">
+          <svg width="16" height="16" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.9v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.16.28-1.7V4.97H.9A9 9 0 0 0 0 9c0 1.45.35 2.83.9 4.03l3.05-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .9 4.97l3.05 2.33C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
+          Continue with Google
+        </a>
+      </form>
+
+    </div>
+  </section>
+</div>
+
+<script>
+/* ============================================================
+   Tab switching
+   ============================================================ */
+function ffaSwitchTab(which) {
+  const tabs = document.querySelector('.ffa-tabs');
+  const loginForm = document.getElementById('login-form');
+  const signupForm = document.getElementById('signup-form');
+  const tabLogin = document.getElementById('tab-login');
+  const tabSignup = document.getElementById('tab-signup');
+  const heading = document.getElementById('ffa-heading');
+  const subheading = document.getElementById('ffa-subheading');
+
+  tabs.setAttribute('data-active', which);
+
+  if (which === 'login') {
+    loginForm.hidden = false;
+    signupForm.hidden = true;
+    tabLogin.classList.add('is-active');
+    tabSignup.classList.remove('is-active');
+    tabLogin.setAttribute('aria-selected', 'true');
+    tabSignup.setAttribute('aria-selected', 'false');
+    heading.textContent = 'Welcome back';
+    subheading.textContent = "Sign in to pick up your training plan where you left off.";
+  } else {
+    loginForm.hidden = true;
+    signupForm.hidden = false;
+    tabSignup.classList.add('is-active');
+    tabLogin.classList.remove('is-active');
+    tabSignup.setAttribute('aria-selected', 'true');
+    tabLogin.setAttribute('aria-selected', 'false');
+    heading.textContent = 'Create your account';
+    subheading.textContent = "Tell us a bit about you and FlexFit AI will build your first plan.";
+  }
+}
+
+/* ============================================================
+   Show / hide password
+   ============================================================ */
+function ffaTogglePassword(inputId, btn) {
+  const input = document.getElementById(inputId);
+  const showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+  btn.innerHTML = showing
+    ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/></svg>'
+    : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 3l18 18M10.6 10.6a3 3 0 004.24 4.24M9.5 5.2A10.6 10.6 0 0122 12s-1.4 2.6-3.9 4.5M6.1 6.1C4 7.5 2 12 2 12s3.6 7 10 7c1.3 0 2.5-.24 3.6-.66" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+}
+
+/* ============================================================
+   Email validation (client-side hint only — server still validates)
+   ============================================================ */
+function ffaValidateEmail(inputId, msgId) {
+  const input = document.getElementById(inputId);
+  const msg = document.getElementById(msgId);
+  const val = input.value.trim();
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  input.classList.remove('is-valid', 'is-invalid');
+  msg.className = 'ffa-field-msg';
+
+  if (val.length === 0) {
+    msg.textContent = '';
+    return;
+  }
+  if (re.test(val)) {
+    input.classList.add('is-valid');
+    msg.textContent = '';
+  } else {
+    input.classList.add('is-invalid');
+    msg.textContent = 'Enter a valid email address.';
+    msg.classList.add('is-error');
+  }
+}
+
+/* ============================================================
+   Password strength + rule checklist (drives existing #password-rules)
+   ============================================================ */
+function checkPassword() {
+  const password = document.getElementById('signup-password').value;
+  const lengthOk = password.length >= 8;
+  const numberOk = /[0-9]/.test(password);
+  const specialOk = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+  const lengthRule = document.getElementById('rule-length');
+  const numberRule = document.getElementById('rule-number');
+  const specialRule = document.getElementById('rule-special');
+
+  lengthRule.classList.toggle('is-met', lengthOk);
+  numberRule.classList.toggle('is-met', numberOk);
+  specialRule.classList.toggle('is-met', specialOk);
+
+  const strengthWrap = document.getElementById('strength-wrap');
+  const segs = [document.getElementById('seg-1'), document.getElementById('seg-2'), document.getElementById('seg-3')];
+  const label = document.getElementById('strength-label');
+
+  if (password.length === 0) {
+    strengthWrap.hidden = true;
+  } else {
+    strengthWrap.hidden = false;
+    const score = [lengthOk, numberOk, specialOk].filter(Boolean).length;
+    const colors = ['#d63a3a', '#d68b1f', '#2a9d55'];
+    const texts = ['Weak password', 'Good password', 'Strong password'];
+    segs.forEach((seg, i) => {
+      seg.style.background = i < score ? colors[Math.max(score - 1, 0)] : '#e5e0da';
+    });
+    label.textContent = score === 0 ? 'Weak password' : texts[score - 1];
+    label.style.color = score === 0 ? '#d63a3a' : colors[score - 1];
   }
 
-  async function signup() {
-    const name = document.getElementById('signup-name').value;
-    const email = document.getElementById('signup-email').value;
-    const password = document.getElementById('signup-password').value;
+  ffaCheckMatch();
+}
 
-    const strongPassword = /^(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
-    if (!strongPassword.test(password)) {
-      document.getElementById('signup-message').textContent =
-        'Password must be at least 8 characters and include a special symbol.';
-      return;
-    }
+function ffaCheckMatch() {
+  const pw = document.getElementById('signup-password').value;
+  const confirm = document.getElementById('signup-confirm');
+  const msg = document.getElementById('confirm-msg');
 
+  confirm.classList.remove('is-valid', 'is-invalid');
+  msg.className = 'ffa-field-msg';
+
+  if (confirm.value.length === 0) {
+    msg.textContent = '';
+    return;
+  }
+  if (confirm.value === pw) {
+    confirm.classList.add('is-valid');
+    msg.textContent = 'Passwords match.';
+    msg.classList.add('is-ok');
+  } else {
+    confirm.classList.add('is-invalid');
+    msg.textContent = 'Passwords do not match.';
+    msg.classList.add('is-error');
+  }
+}
+
+/* ============================================================
+   Loading state helper
+   ============================================================ */
+function ffaSetLoading(btnId, isLoading) {
+  const btn = document.getElementById(btnId);
+  btn.classList.toggle('is-loading', isLoading);
+  btn.disabled = isLoading;
+}
+
+/* ============================================================
+   Forgot password — honest placeholder, no fake flow
+   ============================================================ */
+function ffaForgotPassword(e) {
+  e.preventDefault();
+  document.getElementById('forgot-note').hidden = false;
+}
+
+/* ============================================================
+   Remember me — stores email locally only, not a login mechanism
+   ============================================================ */
+(function ffaInitRememberMe() {
+  const saved = localStorage.getItem('ffa_remember_email');
+  if (saved) {
+    document.getElementById('login-email').value = saved;
+    document.getElementById('login-remember').checked = true;
+  }
+})();
+
+/* ============================================================
+   Sign up — same endpoint/payload as before, richer UI feedback
+   ============================================================ */
+async function signup() {
+  const name = document.getElementById('signup-name').value;
+  const email = document.getElementById('signup-email').value;
+  const password = document.getElementById('signup-password').value;
+  const confirm = document.getElementById('signup-confirm').value;
+  const messageEl = document.getElementById('signup-message');
+
+  messageEl.className = 'ffa-form-message';
+
+  if (password !== confirm) {
+    messageEl.textContent = 'Passwords do not match.';
+    messageEl.classList.add('is-error');
+    return;
+  }
+
+  const strongPassword = /^(?=.*[0-9])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
+  if (!strongPassword.test(password)) {
+    messageEl.textContent = 'Password must be at least 8 characters and include a number and a special symbol.';
+    messageEl.classList.add('is-error');
+    return;
+  }
+
+  ffaSetLoading('signup-submit', true);
+  try {
     const res = await fetch('/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password })
     });
     const data = await res.json();
-    document.getElementById('signup-message').textContent = data.message || data.error;
+
+    messageEl.textContent = data.message || data.error || (res.ok ? 'Account created.' : 'Something went wrong.');
+    messageEl.classList.add(res.ok ? 'is-success' : 'is-error');
 
     if (res.ok) {
       window.location.href = '/dashboard.html';
     }
+  } catch (err) {
+    messageEl.textContent = 'Network error — please try again.';
+    messageEl.classList.add('is-error');
+  } finally {
+    ffaSetLoading('signup-submit', false);
   }
+}
 
-  async function login() {
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
+/* ============================================================
+   Log in — same endpoint/payload as before, richer UI feedback
+   ============================================================ */
+async function login() {
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+  const remember = document.getElementById('login-remember').checked;
+  const messageEl = document.getElementById('login-message');
 
+  messageEl.className = 'ffa-form-message';
+
+  ffaSetLoading('login-submit', true);
+  try {
     const res = await fetch('/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     });
     const data = await res.json();
-    document.getElementById('login-message').textContent = data.message || data.error;
+
+    messageEl.textContent = data.message || data.error || (res.ok ? 'Welcome back.' : 'Something went wrong.');
+    messageEl.classList.add(res.ok ? 'is-success' : 'is-error');
 
     if (res.ok) {
+      if (remember) {
+        localStorage.setItem('ffa_remember_email', email);
+      } else {
+        localStorage.removeItem('ffa_remember_email');
+      }
       window.location.href = '/dashboard.html';
     }
+  } catch (err) {
+    messageEl.textContent = 'Network error — please try again.';
+    messageEl.classList.add('is-error');
+  } finally {
+    ffaSetLoading('login-submit', false);
   }
+}
 </script>
-<a href="/auth/google"><button type="button">Continue with Google</button></a>
+
 </body>
 </html>

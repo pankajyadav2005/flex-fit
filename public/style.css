@@ -921,3 +921,25 @@ body {
   color: #e8623d;
   text-decoration: none;
 }
+
+.coach-box {
+  width: 380px;
+  text-align: center;
+}
+
+.coach-exercise {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 16px 0 4px;
+}
+
+.coach-timer {
+  font-size: 24px;
+  font-weight: 700;
+  color: #e8623d;
+  margin: 16px 0;
+}
+
+.coach-btn {
+  margin-right: 8px;
+}

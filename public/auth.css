@@ -1,0 +1,656 @@
+/* ============================================================
+   FlexFit AI — Auth page styles
+   Scoped entirely under .ffa-page so nothing here touches the
+   existing app shell (sidebar, cards, etc. in style.css).
+   ============================================================ */
+
+.ffa-page {
+  --coral: #e8623d;
+  --coral-deep: #d5522f;
+  --coral-soft: #fef3ee;
+  --cream: #faf6f1;
+  --cream-deep: #f2e9dd;
+  --ink: #1a1a1a;
+  --ink-soft: #6f6a63;
+  --ink-faint: #a49d92;
+  --line: #e5e0da;
+  --white: #ffffff;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(26, 20, 15, 0.08);
+  --shadow-lift: 0 12px 32px rgba(232, 98, 61, 0.16);
+
+  font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--cream);
+  color: var(--ink);
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+}
+
+.ffa-page * {
+  box-sizing: border-box;
+}
+
+.ffa-page h1,
+.ffa-page h2,
+.ffa-page h3 {
+  font-family: "Manrope", -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* -------------------- LEFT: BRANDING -------------------- */
+
+.ffa-brand {
+  position: relative;
+  overflow: hidden;
+  background: #241b15;
+  color: var(--cream);
+  padding: 48px 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.ffa-brand-glow {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(600px 500px at 12% 8%, rgba(232, 98, 61, 0.55), transparent 60%),
+    radial-gradient(500px 460px at 85% 78%, rgba(255, 158, 108, 0.35), transparent 65%);
+}
+
+.ffa-pulse {
+  position: absolute;
+  left: -6%;
+  right: -6%;
+  bottom: 14%;
+  height: 140px;
+  z-index: 0;
+  opacity: 0.5;
+}
+
+.ffa-dotgrid {
+  position: absolute;
+  top: 28px;
+  right: 32px;
+  width: 108px;
+  height: 108px;
+  z-index: 0;
+  opacity: 0.35;
+  background-image: radial-gradient(rgba(250, 246, 241, 0.55) 1.4px, transparent 1.4px);
+  background-size: 14px 14px;
+}
+
+.ffa-brand > * {
+  position: relative;
+  z-index: 1;
+}
+
+.ffa-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: "Manrope", sans-serif;
+  font-weight: 800;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+}
+
+.ffa-logo-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--coral), #ff8f5e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ffa-brand-mid {
+  max-width: 420px;
+}
+
+.ffa-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #ffcbb2;
+  background: rgba(232, 98, 61, 0.18);
+  border: 1px solid rgba(232, 98, 61, 0.4);
+  padding: 6px 12px;
+  border-radius: 20px;
+  margin-bottom: 22px;
+}
+
+.ffa-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff9d6e;
+}
+
+.ffa-brand-mid h1 {
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1.14;
+  letter-spacing: -0.015em;
+  margin: 0 0 16px;
+}
+
+.ffa-brand-mid p {
+  font-size: 15px;
+  line-height: 1.65;
+  color: #d8cfc4;
+  margin: 0;
+  max-width: 380px;
+}
+
+.ffa-stats {
+  display: flex;
+  flex-direction: column;
+  margin-top: 40px;
+  max-width: 380px;
+}
+
+.ffa-stat {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-top: 1px solid rgba(250, 246, 241, 0.12);
+}
+
+.ffa-stat:last-child {
+  border-bottom: 1px solid rgba(250, 246, 241, 0.12);
+}
+
+.ffa-stat-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: rgba(250, 246, 241, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #ffb18a;
+}
+
+.ffa-stat-text {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #f1ece4;
+}
+
+.ffa-brand-foot {
+  font-size: 12.5px;
+  color: #9c9288;
+}
+
+/* -------------------- RIGHT: AUTH -------------------- */
+
+.ffa-auth {
+  background: var(--cream);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.ffa-auth-inner {
+  width: 100%;
+  max-width: 400px;
+}
+
+.ffa-auth-head h2 {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0 0 6px;
+}
+
+.ffa-auth-head p {
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin: 0 0 26px;
+  line-height: 1.5;
+}
+
+/* tabs */
+.ffa-tabs {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--cream-deep);
+  border-radius: 30px;
+  padding: 4px;
+  margin-bottom: 26px;
+}
+
+.ffa-tab {
+  position: relative;
+  z-index: 1;
+  border: none;
+  background: transparent;
+  padding: 10px 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  border-radius: 24px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.ffa-tab.is-active {
+  color: var(--white);
+}
+
+.ffa-tab-indicator {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  height: calc(100% - 8px);
+  background: var(--coral);
+  border-radius: 24px;
+  transition: transform 0.28s cubic-bezier(0.65, 0, 0.35, 1);
+  box-shadow: 0 4px 12px rgba(232, 98, 61, 0.35);
+}
+
+.ffa-tabs[data-active="signup"] .ffa-tab-indicator {
+  transform: translateX(100%);
+}
+
+/* forms */
+.ffa-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ffa-form[hidden] {
+  display: none;
+}
+
+.ffa-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ffa-field label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.ffa-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.ffa-input-wrap input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  font-size: 14px;
+  background: var(--white);
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ffa-input-wrap input::placeholder {
+  color: var(--ink-faint);
+}
+
+.ffa-input-wrap input:focus {
+  border-color: var(--coral);
+  box-shadow: 0 0 0 3px rgba(232, 98, 61, 0.14);
+}
+
+.ffa-input-wrap input.has-icon {
+  padding-right: 42px;
+}
+
+.ffa-input-wrap input.is-invalid {
+  border-color: #d63a3a;
+}
+
+.ffa-input-wrap input.is-valid {
+  border-color: #2a9d55;
+}
+
+.ffa-icon-btn {
+  position: absolute;
+  right: 6px;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.ffa-icon-btn:hover {
+  color: var(--ink);
+  background: var(--cream-deep);
+}
+
+.ffa-icon-btn:focus-visible {
+  outline: 2px solid var(--coral);
+  outline-offset: 2px;
+}
+
+.ffa-field-msg {
+  font-size: 12px;
+  min-height: 15px;
+  color: var(--ink-faint);
+}
+
+.ffa-field-msg.is-error { color: #d63a3a; }
+.ffa-field-msg.is-ok { color: #2a9d55; }
+
+/* password strength */
+.ffa-strength {
+  margin-top: 2px;
+}
+
+.ffa-strength-track {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.ffa-strength-seg {
+  height: 4px;
+  flex: 1;
+  border-radius: 3px;
+  background: var(--line);
+  transition: background 0.2s ease;
+}
+
+.ffa-strength-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink-faint);
+}
+
+.ffa-rules {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ffa-rules li {
+  font-size: 12px;
+  color: var(--ink-faint);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.ffa-rules li::before {
+  content: "";
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  flex-shrink: 0;
+  background-size: 8px 8px;
+  background-repeat: no-repeat;
+  background-position: center;
+  transition: all 0.15s ease;
+}
+
+.ffa-rules li.is-met {
+  color: #2a9d55;
+}
+
+.ffa-rules li.is-met::before {
+  border-color: #2a9d55;
+  background-color: #2a9d55;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2.5 6.2L4.8 8.5L9.5 3.5' stroke='white' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+/* row / meta */
+.ffa-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.ffa-remember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  user-select: none;
+}
+
+.ffa-remember input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--coral);
+  cursor: pointer;
+}
+
+.ffa-link {
+  color: var(--coral);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.ffa-link:hover {
+  text-decoration: underline;
+}
+
+/* buttons */
+.ffa-submit {
+  position: relative;
+  width: 100%;
+  border: none;
+  background: var(--coral);
+  color: var(--white);
+  font-size: 14.5px;
+  font-weight: 700;
+  padding: 13px 0;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.15s ease, transform 0.08s ease, box-shadow 0.15s ease;
+  box-shadow: var(--shadow);
+}
+
+.ffa-submit:hover {
+  background: var(--coral-deep);
+  box-shadow: var(--shadow-lift);
+}
+
+.ffa-submit:active {
+  transform: scale(0.985);
+}
+
+.ffa-submit:disabled {
+  opacity: 0.75;
+  cursor: default;
+  transform: none;
+}
+
+.ffa-submit:focus-visible,
+.ffa-tab:focus-visible,
+.ffa-google:focus-visible {
+  outline: 2px solid var(--coral-deep);
+  outline-offset: 2px;
+}
+
+.ffa-spinner {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: var(--white);
+  animation: ffa-spin 0.7s linear infinite;
+  display: none;
+}
+
+.ffa-submit.is-loading .ffa-spinner {
+  display: inline-block;
+}
+
+.ffa-submit.is-loading .ffa-submit-label {
+  opacity: 0.85;
+}
+
+@keyframes ffa-spin {
+  to { transform: rotate(360deg); }
+}
+
+.ffa-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+  color: var(--ink-faint);
+  font-size: 12px;
+}
+
+.ffa-divider::before,
+.ffa-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.ffa-google {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 11px 0;
+  border-radius: 10px;
+  border: 1.5px solid var(--line);
+  background: var(--white);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.ffa-google:hover {
+  border-color: var(--ink-faint);
+  background: var(--cream);
+}
+
+.ffa-form-message {
+  font-size: 13px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin: 0;
+  display: none;
+}
+
+.ffa-form-message.is-visible {
+  display: block;
+}
+
+.ffa-form-message.is-error {
+  display: block;
+  color: #b3261e;
+  background: #fdecea;
+}
+
+.ffa-form-message.is-success {
+  display: block;
+  color: #1e7a3d;
+  background: #e9f7ee;
+}
+
+.ffa-reset-note {
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin: 6px 0 0;
+}
+
+/* -------------------- RESPONSIVE -------------------- */
+
+@media (max-width: 980px) {
+  .ffa-page {
+    grid-template-columns: 1fr;
+  }
+
+  .ffa-brand {
+    padding: 32px 28px 40px;
+  }
+
+  .ffa-brand-mid h1 {
+    font-size: 30px;
+  }
+
+  .ffa-stats {
+    margin-top: 28px;
+  }
+
+  .ffa-auth {
+    padding: 32px 24px 56px;
+  }
+}
+
+@media (max-width: 500px) {
+  .ffa-brand {
+    padding: 26px 20px 32px;
+  }
+
+  .ffa-brand-mid h1 {
+    font-size: 26px;
+  }
+
+  .ffa-brand-mid p {
+    font-size: 13.5px;
+  }
+
+  .ffa-pulse,
+  .ffa-dotgrid {
+    opacity: 0.25;
+  }
+
+  .ffa-auth {
+    padding: 28px 18px 48px;
+  }
+
+  .ffa-auth-head h2 {
+    font-size: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ffa-tab-indicator,
+  .ffa-submit,
+  .ffa-spinner {
+    transition: none;
+    animation-duration: 0.001ms !important;
+  }
+}
