@@ -1,6 +1,9 @@
 {
   "name": "flex-fit",
   "version": "1.0.0",
+  "engines": {
+    "node": ">=18"
+  },
   "description": "FlexFit",
   "main": "server.js",
   "scripts": {

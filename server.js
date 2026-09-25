@@ -387,33 +387,59 @@ app.get('/api/summary', requireLogin, (req, res) => {
   });
 });
 
-// JIYA AI - rule-based chat trainer, personalized using saved profile data
-app.post('/api/jiya', requireLogin, (req, res) => {
+// JIYA AI - real LLM-powered chat trainer (via Groq, free tier), personalized using saved profile data
+app.post('/api/jiya', requireLogin, async (req, res) => {
   const { message } = req.body;
-  const profile = db.prepare('SELECT * FROM profiles WHERE user_id = ?').get(req.currentUserId);
-  const fitnessLevel = profile ? profile.fitness_level : 'Beginner';
-  const weight = profile ? profile.weight : 70;
 
-  const text = message.toLowerCase();
-  let reply;
-
-  if (text.includes('push')) {
-    reply = `Here's a Push Day workout for ${fitnessLevel} level:\n\n1. Bench Press - 4x8\n2. Overhead Press - 3x10\n3. Incline Dumbbell Press - 3x10\n4. Tricep Dips - 3x12\n5. Lateral Raises - 3x15`;
-  } else if (text.includes('hiit')) {
-    reply = `30-Minute HIIT Workout:\n\n5 min warm-up\n8 rounds of: 40s work / 20s rest\n- Jump squats\n- Mountain climbers\n- Burpees\n- Push-ups\n5 min cool-down stretch`;
-  } else if (text.includes('protein')) {
-    const low = Math.round(weight * 1.6);
-    const high = Math.round(weight * 2.2);
-    reply = `Based on your weight (${weight}kg), aim for ${low}-${high}g of protein per day (1.6-2.2g per kg of bodyweight is the standard range for active individuals).`;
-  } else if (text.includes('meal') || text.includes('cutting') || text.includes('diet')) {
-    reply = `For a cutting phase, aim for a moderate calorie deficit (about 300-500 kcal below maintenance) while keeping protein high to preserve muscle. Focus on lean proteins, vegetables, and whole grains.`;
-  } else if (text.includes('leg')) {
-    reply = `Leg Day workout for ${fitnessLevel} level:\n\n1. Squats - 4x8\n2. Romanian Deadlifts - 3x10\n3. Leg Press - 3x12\n4. Walking Lunges - 3x12 each leg\n5. Calf Raises - 4x15`;
-  } else {
-    reply = `I can help with workouts, meal plans, and nutrition questions. Try asking me for a specific workout (like "push day" or "leg day"), a meal plan, or a nutrition question like "how much protein do I need?"`;
+  if (!message || !message.trim()) {
+    return res.status(400).json({ error: 'Message is required' });
   }
 
-  res.json({ reply });
+  const profile = db.prepare('SELECT * FROM profiles WHERE user_id = ?').get(req.currentUserId);
+  const fitnessLevel = profile ? profile.fitness_level : 'Beginner';
+  const weight = profile ? profile.weight : null;
+  const goals = profile ? JSON.parse(profile.goals || '[]') : [];
+  const sports = profile ? JSON.parse(profile.sports || '[]') : [];
+
+  const systemPrompt = `You are Jiya, a friendly, knowledgeable AI fitness trainer inside the FlexFit AI app.
+Answer workout, nutrition, and general fitness questions directly and helpfully.
+Keep replies concise (a few short paragraphs or a simple list) — this is a mobile chat UI, not an essay.
+User context: fitness level = ${fitnessLevel}${weight ? `, weight = ${weight}kg` : ''}${goals.length ? `, goals = ${goals.join(', ')}` : ''}${sports.length ? `, sports = ${sports.join(', ')}` : ''}.
+If asked something outside fitness/nutrition/training, gently steer back to what you can help with.
+Do not give medical diagnoses; suggest seeing a doctor for medical concerns.`;
+
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 500,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: message }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('Groq API error:', response.status, errText);
+      return res.status(502).json({ reply: "Sorry, I couldn't think that through just now — try again in a moment." });
+    }
+
+    const data = await response.json();
+    const reply = data.choices?.[0]?.message?.content || "Sorry, I didn't quite catch that — try rephrasing?";
+
+    res.json({ reply });
+
+  } catch (err) {
+    console.error('Jiya route failed:', err);
+    res.status(500).json({ reply: "Something went wrong reaching Jiya. Please try again." });
+  }
 });
 
 const PORT = process.env.PORT || 3000;
