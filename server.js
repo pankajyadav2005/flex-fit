@@ -416,7 +416,7 @@ Do not give medical diagnoses; suggest seeing a doctor for medical concerns.`;
         'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-20b',
         max_tokens: 500,
         messages: [
           { role: 'system', content: systemPrompt },
