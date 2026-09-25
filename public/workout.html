@@ -51,21 +51,6 @@
           <div id="exercise-grid" class="exercise-grid"></div>
         </div>
 
-        <!-- VOICE WORKOUT COACH -->
-        <div id="voice-coach-modal" class="modal-overlay hidden">
-          <div class="modal-box coach-box">
-            <h3>🎙️ Voice Workout Coach</h3>
-            <p class="subtext" id="coach-status">Say "next" when you finish a set, or use the button below.</p>
-            <div class="coach-exercise" id="coach-exercise-name">--</div>
-            <div class="summary-label" id="coach-exercise-detail">--</div>
-            <div class="coach-timer hidden" id="coach-rest-timer">Rest: <span id="coach-rest-seconds">0</span>s</div>
-            <div class="button-row space-between">
-              <button class="btn-secondary" onclick="closeCoach()">End Session</button>
-              <button class="btn-primary" onclick="coachNext()">Next →</button>
-            </div>
-          </div>
-        </div>
-
       </div>
     </div>
   </div>
@@ -129,7 +114,6 @@
           <div class="summary-label">${d.rest ? d.note : d.muscles.join(', ')}</div>
           ${!d.rest ? `<a href="#" class="view-exercises-link" onclick="viewDayExercises(event, '${d.muscles.join(",")}')">View Exercises →</a>` : ''}
           ${!d.rest && isToday ? `
-            <button class="btn-secondary coach-btn" onclick='startVoiceCoach(${JSON.stringify(d.muscles)}, "${d.name}", "${d.day}")'>🎙️ Voice Coach</button>
             <button class="btn-primary complete-btn" ${isDone ? 'disabled' : ''} onclick="markComplete('${d.day}','${d.name}')">${isDone ? '✓ Completed' : 'Mark Complete'}</button>
           ` : ''}
         `;
@@ -204,125 +188,6 @@
         `;
         grid.appendChild(card);
       });
-    }
-
-    // ---------- VOICE WORKOUT COACH ----------
-    let coachExercises = [];
-    let coachIndex = 0;
-    let coachDay = null;
-    let coachWorkoutName = null;
-    let recognition = null;
-    let restInterval = null;
-
-    function speak(text) {
-      if (!window.speechSynthesis) return;
-      window.speechSynthesis.cancel(); // stop any previous speech
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.95;
-      window.speechSynthesis.speak(utterance);
-    }
-
-    function startVoiceCoach(muscles, workoutName, day) {
-      coachExercises = EXERCISE_LIBRARY.filter(ex => muscles.some(m => ex.muscles.includes(m))).slice(0, 5);
-      if (coachExercises.length === 0) {
-        alert('No exercises found for this workout.');
-        return;
-      }
-      coachIndex = 0;
-      coachDay = day;
-      coachWorkoutName = workoutName;
-      document.getElementById('voice-coach-modal').classList.remove('hidden');
-      announceCurrentExercise();
-      startListening();
-    }
-
-    function announceCurrentExercise() {
-      const ex = coachExercises[coachIndex];
-      document.getElementById('coach-exercise-name').textContent = ex.name;
-      document.getElementById('coach-exercise-detail').textContent = `${ex.sets} sets × ${ex.reps} reps`;
-      document.getElementById('coach-rest-timer').classList.add('hidden');
-      speak(`${ex.name}. ${ex.sets} sets of ${ex.reps} reps. Say next when you're done.`);
-    }
-
-    function coachNext() {
-      const ex = coachExercises[coachIndex];
-      coachIndex++;
-
-      if (coachIndex >= coachExercises.length) {
-        speak('Workout complete. Great job today!');
-        document.getElementById('coach-exercise-name').textContent = '✅ Workout Complete!';
-        document.getElementById('coach-exercise-detail').textContent = '';
-        markComplete(coachDay, coachWorkoutName);
-        stopListening();
-        setTimeout(closeCoach, 3000);
-        return;
-      }
-
-      // Rest period before the next exercise
-      const restSeconds = ex.restSeconds;
-      speak(`Rest for ${restSeconds} seconds.`);
-      const timerEl = document.getElementById('coach-rest-timer');
-      const secondsEl = document.getElementById('coach-rest-seconds');
-      timerEl.classList.remove('hidden');
-      let remaining = restSeconds;
-      secondsEl.textContent = remaining;
-
-      clearInterval(restInterval);
-      restInterval = setInterval(() => {
-        remaining--;
-        secondsEl.textContent = remaining;
-        if (remaining <= 0) {
-          clearInterval(restInterval);
-          announceCurrentExercise();
-        }
-      }, 1000);
-    }
-
-    function startListening() {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        document.getElementById('coach-status').textContent = 'Voice recognition not supported in this browser — use the Next button.';
-        return;
-      }
-
-      recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = false;
-      recognition.lang = 'en-US';
-
-      recognition.onresult = (event) => {
-        const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
-        if (transcript.includes('next')) {
-          coachNext();
-        }
-      };
-
-      recognition.onerror = () => {
-        document.getElementById('coach-status').textContent = 'Voice recognition had an issue — use the Next button.';
-      };
-
-      recognition.onend = () => {
-        if (!document.getElementById('voice-coach-modal').classList.contains('hidden')) {
-          recognition.start(); // keep listening while the modal is open
-        }
-      };
-
-      recognition.start();
-    }
-
-    function stopListening() {
-      if (recognition) {
-        recognition.onend = null;
-        recognition.stop();
-        recognition = null;
-      }
-    }
-
-    function closeCoach() {
-      document.getElementById('voice-coach-modal').classList.add('hidden');
-      window.speechSynthesis.cancel();
-      clearInterval(restInterval);
-      stopListening();
     }
 
     async function signOut() {
