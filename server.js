@@ -300,7 +300,7 @@ Respond with ONLY valid JSON in this exact shape, no other text, no markdown fen
         'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'qwen/qwen3.6-27b',
+        model: 'qwen/qwen3.8-27b',
         max_tokens: 1500,
         temperature: 0,
         response_format: { type: 'json_object' },
