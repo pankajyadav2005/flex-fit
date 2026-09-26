@@ -472,7 +472,13 @@
       const input = document.getElementById('ai-ingredient-input');
       const text = input.value.trim();
       if (!text) return;
-      ingredientTags.push(text);
+
+      // Split on commas so "egg,paneer" adds both as separate tags
+      text.split(',')
+        .map(t => t.trim())
+        .filter(t => t.length > 0)
+        .forEach(t => ingredientTags.push(t));
+
       input.value = '';
       renderIngredientTags();
     }
@@ -530,6 +536,13 @@
 
     document.getElementById('food-select').addEventListener('change', updateMealPreview);
     document.getElementById('food-grams').addEventListener('input', updateMealPreview);
+
+    document.getElementById('ai-ingredient-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addIngredientTag();
+      }
+    });
 
     async function init() {
       await loadTarget();
