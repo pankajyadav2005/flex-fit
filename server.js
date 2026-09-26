@@ -273,10 +273,21 @@ app.post('/api/scan-food', requireLogin, async (req, res) => {
   const dataUrl = `data:${imageMime};base64,${image}`;
   const knownFoods = FOOD_DATABASE.map(f => f.name).join(', ');
 
-  const visionPrompt = `You are a nutrition vision assistant. Look at this photo of a plate of food and identify each distinct food item visible, with a realistic estimated portion size in grams based on typical plate sizes and visual volume.
+  const visionPrompt = `You are a nutrition vision assistant analyzing a photo of a meal (often an Indian thali/plate with multiple small dishes).
+
+Be thorough and granular. Identify EVERY visibly distinct food item separately — do not merge multiple different foods into one vague label like "vegetable" or "curry":
+- Each curry/sabzi/main dish — name it by its primary ingredient (e.g. "Paneer curry", "Mixed vegetable curry", "Chana masala"), not just the raw ingredient.
+- Each bread — roti, chapati, naan, papad (count them individually if there is more than one visible).
+- Rice and dal if present, listed separately.
+- Any raw salad or accompaniments — list each salad component SEPARATELY (e.g. "Cucumber slices", "Tomato slices", "Onion", "Lemon wedge") rather than grouping them as one "salad" or "vegetable" item.
+- Condiments — pickle/achar, chutney, papad — include these even if the portion is small.
+
+Critical accuracy rule: if a dish is clearly COOKED with visible oil, ghee, or spices (a curry, sabzi, or stir-fry), estimate the nutrition for the FULL COOKED DISH — including the oil and seasoning — not just the raw main ingredient. A cooked paneer curry or vegetable sabzi has meaningfully more calories and fat than raw paneer or raw vegetables alone, because of the added oil/ghee used in cooking.
 
 For each item, if it closely matches one of these known foods, use that EXACT name: ${knownFoods}.
-If it doesn't closely match any of those, give your own best common food name and your own best estimate of calories, protein, carbs and fat per 100g for that food.
+If it doesn't closely match any of those (e.g. it's a specific curry, pickle, or papad not in that list), give your own best common food name and your own best estimate of calories, protein, carbs and fat per 100g for that food AS COOKED/SERVED, factoring in oil where relevant.
+
+Give a realistic estimated portion size in grams for each item based on typical plate proportions.
 
 Respond with ONLY valid JSON in this exact shape, no other text, no markdown fences:
 {"items": [{"food_name": "string", "estimated_grams": number, "calories_per_100g": number, "protein_per_100g": number, "carbs_per_100g": number, "fat_per_100g": number}]}`;
@@ -289,8 +300,9 @@ Respond with ONLY valid JSON in this exact shape, no other text, no markdown fen
         'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
       },
       body: JSON.stringify({
-        model: "qwen/qwen3.8-27b",
-        max_tokens: 1000,
+        model: 'qwen/qwen3.6-27b',
+        max_tokens: 1500,
+        temperature: 0,
         response_format: { type: 'json_object' },
         messages: [
           {

@@ -187,16 +187,18 @@
       const container = document.getElementById('diet-plan-slots');
       container.innerHTML = '';
 
+      // Fixed order every time: Breakfast, Lunch, Snack, Dinner (as defined in MEAL_TEMPLATES)
       Object.keys(MEAL_TEMPLATES).forEach(slot => {
         if (selectedMealOption[slot] === undefined) selectedMealOption[slot] = 0;
         renderMealSlot(slot, container);
       });
     }
 
-    function renderMealSlot(slot, container) {
+    function buildMealSlotEl(slot) {
       const option = MEAL_TEMPLATES[slot][selectedMealOption[slot]];
       const div = document.createElement('div');
       div.className = 'meal-slot';
+      div.id = 'slot-' + slot;
       div.innerHTML = `
         <div class="meal-slot-header">
           <strong>${slot}</strong>
@@ -205,16 +207,20 @@
         <div class="session-name">${option.name}</div>
         <div class="summary-label">${option.calories} kcal · P ${option.protein}g · C ${option.carbs}g · F ${option.fat}g</div>
       `;
-      div.id = 'slot-' + slot;
-      container.appendChild(div);
+      return div;
+    }
+
+    function renderMealSlot(slot, container) {
+      // Only used on initial generation — appends in the fixed order
+      container.appendChild(buildMealSlotEl(slot));
     }
 
     function swapMeal(slot) {
       selectedMealOption[slot] = (selectedMealOption[slot] + 1) % MEAL_TEMPLATES[slot].length;
       const old = document.getElementById('slot-' + slot);
-      const container = document.getElementById('diet-plan-slots');
-      old.remove();
-      renderMealSlot(slot, container);
+      const newEl = buildMealSlotEl(slot);
+      // Replace in place so the slot's position in the list never changes
+      old.parentNode.replaceChild(newEl, old);
     }
 
     // ---------- FOOD SCANNER (Groq vision model — identifies items AND estimates portion size) ----------
@@ -397,7 +403,6 @@
         return;
       }
 
-      // Exactly one macro not yet done, and at least one IS done → give a targeted suggestion
       const doneCount = [proteinDone, carbsDone, fatDone].filter(Boolean).length;
 
       if (proteinDone && !carbsDone && !fatDone) {
@@ -413,7 +418,6 @@
         el.innerHTML = `🥑 <strong>Fat goal hit</strong> (${Math.round(totals.fat)}/${dietTarget.fat}g) — go for leaner options${foods.length ? `: ${foods.join(', ')}` : ''}.`;
         el.classList.remove('hidden');
       } else if (doneCount === 2) {
-        // Two macros done, one left — point specifically at what's still needed
         let remainingMacro = !proteinDone ? 'protein' : (!carbsDone ? 'carbs' : 'fat');
         const doneMacros = ['protein', 'carbs', 'fat'].filter(m => m !== remainingMacro);
         const foods = suggestFoodsFor(remainingMacro, doneMacros);
@@ -531,8 +535,6 @@
       return `${tags.slice(0, -1).join(', ')} and ${tags[tags.length - 1]}`;
     }
 
-    // A small library of meal "concepts" — each one weaves the typed ingredients
-    // into a different style of meal, so Generate Meals gives real variety.
     const MEAL_IDEAS = [
       { title: "Quick bowl", desc: (ing) => `Build a high-protein bowl with ${ing} and a measured carb base.` },
       { title: "Recovery plate", desc: (ing) => `Pair ${ing} with vegetables, a protein source and olive oil.` },
@@ -543,7 +545,6 @@
     ];
 
     function generateFromIngredients() {
-      // Auto-add anything still typed but not yet turned into a tag
       const input = document.getElementById('ai-ingredient-input');
       if (input.value.trim()) {
         addIngredientTag();
@@ -576,7 +577,7 @@
       }
 
       const ingredientText = formatIngredientList(ingredientTags);
-      const ideas = MEAL_IDEAS.slice(0, 4); // always show 4 varied meal ideas
+      const ideas = MEAL_IDEAS.slice(0, 4);
 
       resultDiv.innerHTML = `
         <div class="idea-grid">
