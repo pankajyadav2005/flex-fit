@@ -24,10 +24,12 @@
     </div>
 
     <div class="main-content">
-      <div class="profile-page">
+      <div class="dashboard-page">
 
-        <h2 id="welcome-heading">Welcome back 👋</h2>
-        <p class="subtext" id="welcome-sub">Here's where you stand today.</p>
+        <div class="db-header">
+          <h2 id="welcome-heading">Welcome back <span class="db-wave">👋</span></h2>
+          <p class="subtext" id="welcome-sub">Here's where you stand today.</p>
+        </div>
 
         <div id="no-profile-banner" class="card-panel hidden">
           <p>You haven't set up your profile yet.</p>
@@ -38,60 +40,89 @@
 
         <div id="dashboard-content" class="hidden">
 
-          <div class="card-grid" id="stats-grid">
-            <div class="sport-card">
-              <div class="sport-icon">🔥</div>
-              <div class="sport-name" id="stat-calories-burned">-</div>
-              <div class="sport-goals-count">Calories burned (cardio)</div>
+          <div class="db-stats-grid" id="stats-grid">
+            <div class="db-stat-card db-stat-orange">
+              <div class="db-stat-icon">🔥</div>
+              <div class="db-stat-info">
+                <div class="db-stat-value" id="stat-calories-burned">-</div>
+                <div class="db-stat-label">Calories burned (cardio)</div>
+              </div>
             </div>
-            <div class="sport-card">
-              <div class="sport-icon">🍽️</div>
-              <div class="sport-name" id="stat-calories-eaten">-</div>
-              <div class="sport-goals-count">Calories eaten today</div>
+            <div class="db-stat-card db-stat-purple">
+              <div class="db-stat-icon">🍽️</div>
+              <div class="db-stat-info">
+                <div class="db-stat-value" id="stat-calories-eaten">-</div>
+                <div class="db-stat-label">Calories eaten today</div>
+              </div>
             </div>
-            <div class="sport-card">
-              <div class="sport-icon">⚖️</div>
-              <div class="sport-name" id="stat-weight">-</div>
-              <div class="sport-goals-count">Current weight (kg)</div>
+            <div class="db-stat-card db-stat-blue">
+              <div class="db-stat-icon">⚖️</div>
+              <div class="db-stat-info">
+                <div class="db-stat-value" id="stat-weight">-</div>
+                <div class="db-stat-label">Current weight (kg)</div>
+              </div>
             </div>
-            <div class="sport-card">
-              <div class="sport-icon">📉</div>
-              <div class="sport-name" id="stat-weight-entries">-</div>
-              <div class="sport-goals-count">Weight log entries</div>
+            <div class="db-stat-card db-stat-pink">
+              <div class="db-stat-icon">📉</div>
+              <div class="db-stat-info">
+                <div class="db-stat-value" id="stat-weight-entries">-</div>
+                <div class="db-stat-label">Weight log entries</div>
+              </div>
             </div>
           </div>
 
-          <div class="card-panel">
-            <div class="panel-header">
-              <h2>Today's Food</h2>
-            </div>
-            <p class="subtext" id="food-progress-text">Loading...</p>
-          </div>
+          <div class="db-stack">
 
-          <div class="card-panel">
-            <div class="panel-header">
-              <h2>Your Sports</h2>
+            <div class="card-panel db-food-panel">
+              <div class="panel-header">
+                <h2>🍽️ Today's Food</h2>
+              </div>
+              <p class="subtext" id="food-progress-text">Loading...</p>
+              <div class="db-progress-track">
+                <div class="db-progress-fill" id="food-progress-fill" style="width:0%"></div>
+              </div>
             </div>
-            <div id="sports-list" class="pill-grid"></div>
-          </div>
 
-          <div class="card-panel">
-            <div class="panel-header">
-              <h2>Your Goals</h2>
-            </div>
-            <div id="goals-list" class="pill-grid"></div>
-          </div>
+            <div class="db-two-col">
+              <div class="card-panel">
+                <div class="panel-header">
+                  <h2>🏅 Your Sports</h2>
+                </div>
+                <div id="sports-list" class="pill-grid"></div>
+              </div>
 
-          <div class="card-panel">
-            <div class="panel-header">
-              <h2>Quick Links</h2>
+              <div class="card-panel">
+                <div class="panel-header">
+                  <h2>🎯 Your Goals</h2>
+                </div>
+                <div id="goals-list" class="pill-grid"></div>
+              </div>
             </div>
-            <div class="button-row" style="gap:12px; flex-wrap:wrap;">
-              <button class="btn-secondary" onclick="window.location.href='/workout.html'">🏋️ Log a workout</button>
-              <button class="btn-secondary" onclick="window.location.href='/food.html'">🍽️ Log food</button>
-              <button class="btn-secondary" onclick="window.location.href='/cardio.html'">📈 Start cardio</button>
-              <button class="btn-secondary" onclick="window.location.href='/jiya.html'">💬 Ask Jiya AI</button>
+
+            <div class="card-panel">
+              <div class="panel-header">
+                <h2>⚡ Quick Links</h2>
+              </div>
+              <div class="db-quicklinks">
+                <button class="db-quick-btn" onclick="window.location.href='/workout.html'">
+                  <span class="db-quick-icon">🏋️</span>
+                  <span>Log a workout</span>
+                </button>
+                <button class="db-quick-btn" onclick="window.location.href='/food.html'">
+                  <span class="db-quick-icon">🍽️</span>
+                  <span>Log food</span>
+                </button>
+                <button class="db-quick-btn" onclick="window.location.href='/cardio.html'">
+                  <span class="db-quick-icon">📈</span>
+                  <span>Start cardio</span>
+                </button>
+                <button class="db-quick-btn" onclick="window.location.href='/jiya.html'">
+                  <span class="db-quick-icon">💬</span>
+                  <span>Ask Jiya AI</span>
+                </button>
+              </div>
             </div>
+
           </div>
 
         </div>
@@ -130,14 +161,22 @@
       const logRes = await fetch('/api/food-log');
       const foodLog = await logRes.json();
 
-      document.getElementById('stat-calories-eaten').textContent = Math.round(foodLog.totals.calories) || 0;
+      const eaten = Math.round(foodLog.totals.calories) || 0;
+      document.getElementById('stat-calories-eaten').textContent = eaten;
 
       const foodText = document.getElementById('food-progress-text');
+      const fill = document.getElementById('food-progress-fill');
+
       if (target.hasProfile) {
-        const remaining = Math.round(target.calories - foodLog.totals.calories);
-        foodText.textContent = `${Math.round(foodLog.totals.calories)} / ${target.calories} kcal — ${remaining >= 0 ? remaining + ' kcal remaining' : Math.abs(remaining) + ' kcal over'}`;
+        const remaining = Math.round(target.calories - eaten);
+        foodText.textContent = `${eaten} / ${target.calories} kcal — ${remaining >= 0 ? remaining + ' kcal remaining' : Math.abs(remaining) + ' kcal over'}`;
+
+        const pct = target.calories > 0 ? Math.min(100, (eaten / target.calories) * 100) : 0;
+        fill.style.width = pct + '%';
+        fill.classList.toggle('over', eaten > target.calories);
       } else {
         foodText.textContent = 'Complete your profile to see your daily calorie target.';
+        fill.style.width = '0%';
       }
 
       const sportsList = document.getElementById('sports-list');

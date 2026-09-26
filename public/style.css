@@ -943,3 +943,160 @@ body {
 .coach-btn {
   margin-right: 8px;
 }
+/* ============================================================
+   DASHBOARD PAGE
+   ============================================================ */
+.dashboard-page {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.db-header {
+  margin-bottom: 28px;
+}
+
+.db-header h2 {
+  font-size: 26px;
+  margin: 0 0 6px;
+}
+
+.db-wave {
+  display: inline-block;
+  animation: db-wave 2.5s infinite;
+  transform-origin: 70% 70%;
+}
+
+@keyframes db-wave {
+  0%, 60%, 100% { transform: rotate(0deg); }
+  10% { transform: rotate(14deg); }
+  20% { transform: rotate(-8deg); }
+  30% { transform: rotate(14deg); }
+  40% { transform: rotate(-4deg); }
+  50% { transform: rotate(10deg); }
+}
+
+.db-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.db-stat-card {
+  background: white;
+  border: 1px solid #f0e7dc;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.db-stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+}
+
+.db-stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.db-stat-orange .db-stat-icon { background: #fef0e8; }
+.db-stat-purple .db-stat-icon { background: #f2edfb; }
+.db-stat-blue   .db-stat-icon { background: #e8f2fb; }
+.db-stat-pink   .db-stat-icon { background: #fbe8ef; }
+
+.db-stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.db-stat-label {
+  font-size: 12px;
+  color: #999;
+  margin-top: 3px;
+}
+
+.db-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.db-food-panel .subtext {
+  margin-bottom: 0;
+}
+
+.db-progress-track {
+  height: 10px;
+  background: #f0e7dc;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 14px;
+}
+
+.db-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f0935f, #e8623d);
+  border-radius: 6px;
+  transition: width 0.4s ease, background 0.2s ease;
+}
+
+.db-progress-fill.over {
+  background: linear-gradient(90deg, #e8623d, #c73f3f);
+}
+
+.db-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.db-quicklinks {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.db-quick-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: #faf6f1;
+  border: 1px solid #eee2d8;
+  border-radius: 14px;
+  padding: 18px 10px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a1a1a;
+  transition: all 0.15s ease;
+}
+
+.db-quick-btn:hover {
+  border-color: #e8623d;
+  background: #fef3ee;
+  transform: translateY(-2px);
+}
+
+.db-quick-icon {
+  font-size: 22px;
+}
+
+@media (max-width: 720px) {
+  .db-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .db-quicklinks { grid-template-columns: repeat(2, 1fr); }
+  .db-two-col { grid-template-columns: 1fr; }
+}
