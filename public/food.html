@@ -171,19 +171,44 @@
       const file = event.target.files[0];
       if (!file) return;
 
-      currentPhotoMime = file.type || 'image/jpeg';
-
       const preview = document.getElementById('photo-preview');
-      preview.src = URL.createObjectURL(file);
-      preview.classList.remove('hidden');
-      document.getElementById('scanner-subtext').textContent = 'Photo ready. Click "Scan Food with AI" to analyze it.';
+      document.getElementById('scanner-subtext').textContent = 'Processing photo...';
       document.getElementById('scanner-note').classList.add('hidden');
       document.getElementById('scan-results').innerHTML = '';
 
+      const img = new Image();
       const reader = new FileReader();
-      reader.onload = () => {
-        currentPhotoBase64 = reader.result.split(',')[1]; // strip "data:image/...;base64," prefix
+
+      reader.onload = (e) => {
+        img.onload = () => {
+          // Resize so the longest edge is at most 1024px, then compress as JPEG
+          // (keeps the base64 payload safely under Groq's 4MB limit)
+          const maxDim = 1024;
+          let { width, height } = img;
+          if (width > height && width > maxDim) {
+            height = Math.round(height * (maxDim / width));
+            width = maxDim;
+          } else if (height > maxDim) {
+            width = Math.round(width * (maxDim / height));
+            height = maxDim;
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          currentPhotoBase64 = dataUrl.split(',')[1];
+          currentPhotoMime = 'image/jpeg';
+
+          preview.src = dataUrl;
+          preview.classList.remove('hidden');
+          document.getElementById('scanner-subtext').textContent = 'Photo ready. Click "Scan Food with AI" to analyze it.';
+        };
+        img.src = e.target.result;
       };
+
       reader.readAsDataURL(file);
     }
 
