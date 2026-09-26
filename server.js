@@ -261,53 +261,109 @@ app.post('/api/food-log', requireLogin, (req, res) => {
   res.json({ message: 'Meal logged' });
 });
 
-// POST a photo for real AI food scanning via Google Cloud Vision
+// POST a photo for AI food scanning via Groq's vision model (identifies items AND estimates portion size)
 app.post('/api/scan-food', requireLogin, async (req, res) => {
-  const { image } = req.body; // base64-encoded image data (no data:image/... prefix)
+  const { image, mimeType } = req.body; // base64-encoded image data (no data:image/... prefix)
 
   if (!image) {
     return res.status(400).json({ error: 'No image provided' });
   }
 
+  const imageMime = mimeType || 'image/jpeg';
+  const dataUrl = `data:${imageMime};base64,${image}`;
+  const knownFoods = FOOD_DATABASE.map(f => f.name).join(', ');
+
+  const visionPrompt = `You are a nutrition vision assistant. Look at this photo of a plate of food and identify each distinct food item visible, with a realistic estimated portion size in grams based on typical plate sizes and visual volume.
+
+For each item, if it closely matches one of these known foods, use that EXACT name: ${knownFoods}.
+If it doesn't closely match any of those, give your own best common food name and your own best estimate of calories, protein, carbs and fat per 100g for that food.
+
+Respond with ONLY valid JSON in this exact shape, no other text, no markdown fences:
+{"items": [{"food_name": "string", "estimated_grams": number, "calories_per_100g": number, "protein_per_100g": number, "carbs_per_100g": number, "fat_per_100g": number}]}`;
+
   try {
-    const visionResponse = await fetch(
-      `https://vision.googleapis.com/v1/images:annotate?key=${process.env.GOOGLE_VISION_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          requests: [{
-            image: { content: image },
-            features: [{ type: 'LABEL_DETECTION', maxResults: 10 }]
-          }]
-        })
-      }
-    );
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+        max_tokens: 1000,
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: visionPrompt },
+              { type: 'image_url', image_url: { url: dataUrl } }
+            ]
+          }
+        ]
+      })
+    });
 
-    const data = await visionResponse.json();
-
-    if (data.error) {
-      return res.status(500).json({ error: 'Vision API error: ' + data.error.message });
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('Groq vision API error:', response.status, errText);
+      return res.status(502).json({ error: 'Food scan failed — please try again in a moment.' });
     }
 
-    const labels = data.responses[0]?.labelAnnotations?.map(l => l.description) || [];
+    const data = await response.json();
+    const raw = data.choices?.[0]?.message?.content || '{}';
 
-    // Match Vision API labels against our real nutrition database
-    const matchedFoods = [];
-    labels.forEach(label => {
-      const found = FOOD_DATABASE.find(f =>
-        f.name.toLowerCase().includes(label.toLowerCase()) ||
-        label.toLowerCase().includes(f.name.toLowerCase().split(' ')[0])
-      );
-      if (found && !matchedFoods.some(m => m.name === found.name)) {
-        matchedFoods.push(found);
-      }
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (e) {
+      console.error('Failed to parse Groq vision JSON:', raw);
+      return res.status(502).json({ error: 'Could not read the scan results — please try again.' });
+    }
+
+    const items = Array.isArray(parsed.items) ? parsed.items : [];
+
+    const matchedFoods = items.map(item => {
+      const grams = Number(item.estimated_grams) || 100;
+      const rawName = String(item.food_name || '').trim();
+
+      // Prefer an exact match against the curated database, then a loose fallback match
+      const dbMatch =
+        FOOD_DATABASE.find(f => f.name.toLowerCase() === rawName.toLowerCase()) ||
+        FOOD_DATABASE.find(f =>
+          f.name.toLowerCase().includes(rawName.toLowerCase()) ||
+          rawName.toLowerCase().includes(f.name.toLowerCase().split(' ')[0])
+        );
+
+      const per100 = dbMatch
+        ? { calories: dbMatch.calories, protein: dbMatch.protein, carbs: dbMatch.carbs, fat: dbMatch.fat }
+        : {
+            calories: Number(item.calories_per_100g) || 0,
+            protein: Number(item.protein_per_100g) || 0,
+            carbs: Number(item.carbs_per_100g) || 0,
+            fat: Number(item.fat_per_100g) || 0
+          };
+
+      const ratio = grams / 100;
+
+      return {
+        name: dbMatch ? dbMatch.name : rawName,
+        estimatedGrams: grams,
+        calories: Math.round(per100.calories * ratio),
+        protein: Math.round(per100.protein * ratio),
+        carbs: Math.round(per100.carbs * ratio),
+        fat: Math.round(per100.fat * ratio),
+        source: dbMatch ? 'database' : 'ai_estimate'
+      };
     });
+
+    const labels = matchedFoods.map(f => f.name);
 
     res.json({ labels, matchedFoods });
 
   } catch (err) {
-    res.status(500).json({ error: 'Vision API request failed: ' + err.message });
+    console.error('Scan-food route failed:', err);
+    res.status(500).json({ error: 'Food scan request failed: ' + err.message });
   }
 });
 
@@ -402,7 +458,7 @@ app.post('/api/jiya', requireLogin, async (req, res) => {
   const sports = profile ? JSON.parse(profile.sports || '[]') : [];
 
   const systemPrompt = `You are Jiya, a friendly, knowledgeable AI fitness trainer inside the FlexFit AI app.
-Answer workout, nutrition, and general fitness questions directly and helpfully.
+Answer workout, nutrition, and general fitness questions directly and helpfully, including simple healthy recipes when asked.
 Keep replies concise (a few short paragraphs or a simple list) — this is a mobile chat UI, not an essay.
 User context: fitness level = ${fitnessLevel}${weight ? `, weight = ${weight}kg` : ''}${goals.length ? `, goals = ${goals.join(', ')}` : ''}${sports.length ? `, sports = ${sports.join(', ')}` : ''}.
 If asked something outside fitness/nutrition/training, gently steer back to what you can help with.

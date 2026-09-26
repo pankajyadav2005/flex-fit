@@ -55,9 +55,10 @@
           </div>
           <input type="file" id="photo-input" accept="image/*" class="hidden" onchange="handlePhotoSelected(event)">
           <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden" onchange="handlePhotoSelected(event)">
-          <p class="subtext" id="scanner-subtext">Snap or upload a photo of your plate, then click Scan — this uses Google Cloud Vision's real label detection, matched against our nutrition database.</p>
+          <p class="subtext" id="scanner-subtext">Snap or upload a photo of your plate, then click Scan — our AI identifies each item and estimates the portion size, then matches it to real nutrition data.</p>
           <img id="photo-preview" class="hidden photo-preview">
           <p id="scanner-note" class="subtext scanner-note hidden"></p>
+          <div id="scan-results"></div>
         </div>
 
         <!-- NUTRITION LOG TAB -->
@@ -111,6 +112,7 @@
     let selectedMealOption = {};
     let ingredientTags = [];
     let currentPhotoBase64 = null;
+    let currentPhotoMime = 'image/jpeg';
 
     function switchTab(tab) {
       ['diet', 'scanner', 'log', 'ai'].forEach(t => {
@@ -164,18 +166,19 @@
       renderMealSlot(slot, container);
     }
 
-    // ---------- FOOD SCANNER (real Google Cloud Vision API) ----------
+    // ---------- FOOD SCANNER (Groq vision model — identifies items AND estimates portion size) ----------
     function handlePhotoSelected(event) {
       const file = event.target.files[0];
       if (!file) return;
+
+      currentPhotoMime = file.type || 'image/jpeg';
 
       const preview = document.getElementById('photo-preview');
       preview.src = URL.createObjectURL(file);
       preview.classList.remove('hidden');
       document.getElementById('scanner-subtext').textContent = 'Photo ready. Click "Scan Food with AI" to analyze it.';
       document.getElementById('scanner-note').classList.add('hidden');
-      const existingResults = document.getElementById('scan-results');
-      if (existingResults) existingResults.remove();
+      document.getElementById('scan-results').innerHTML = '';
 
       const reader = new FileReader();
       reader.onload = () => {
@@ -191,13 +194,15 @@
       }
 
       const noteEl = document.getElementById('scanner-note');
+      const resultsEl = document.getElementById('scan-results');
       noteEl.classList.remove('hidden');
-      noteEl.textContent = 'Analyzing your photo with Google Cloud Vision...';
+      noteEl.textContent = 'Analyzing your plate — identifying items and estimating portions...';
+      resultsEl.innerHTML = '';
 
       const res = await fetch('/api/scan-food', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: currentPhotoBase64 })
+        body: JSON.stringify({ image: currentPhotoBase64, mimeType: currentPhotoMime })
       });
 
       const data = await res.json();
@@ -207,35 +212,47 @@
         return;
       }
 
-      const existingResults = document.getElementById('scan-results');
-      if (existingResults) existingResults.remove();
-
-      if (data.matchedFoods.length === 0) {
-        noteEl.textContent = `Vision detected: ${data.labels.join(', ')} — but none matched our nutrition database closely. Log manually below instead.`;
-        openLogMeal();
+      if (!data.matchedFoods || data.matchedFoods.length === 0) {
+        noteEl.textContent = 'Couldn\'t identify anything on the plate. Try a clearer, well-lit photo, or log manually below.';
         return;
       }
 
-      noteEl.textContent = `Vision detected: ${data.labels.slice(0, 5).join(', ')}. Matched to nutrition data below — pick one to log.`;
+      noteEl.textContent = `Found ${data.matchedFoods.length} item${data.matchedFoods.length > 1 ? 's' : ''} — tap "Log it" to add to today's log.`;
 
-      const resultDiv = document.createElement('div');
-      resultDiv.className = 'pill-grid';
-      resultDiv.id = 'scan-results';
       data.matchedFoods.forEach(food => {
-        const pill = document.createElement('div');
-        pill.className = 'goal-pill';
-        pill.textContent = `${food.name} (${food.calories} kcal/100g)`;
-        pill.onclick = () => {
-          openLogMeal();
-          const select = document.getElementById('food-select');
-          const index = FOOD_DATABASE.findIndex(f => f.name === food.name);
-          if (index >= 0) select.value = index;
-          updateMealPreview();
-        };
-        resultDiv.appendChild(pill);
+        const card = document.createElement('div');
+        card.className = 'meal-slot';
+        card.innerHTML = `
+          <div class="meal-slot-header">
+            <strong>${food.name}</strong>
+            <button class="btn-secondary meal-swap-btn" onclick='logScannedItem(${JSON.stringify(food)})'>+ Log it</button>
+          </div>
+          <div class="summary-label">~${food.estimatedGrams}g · ${food.calories} kcal · P ${food.protein}g · C ${food.carbs}g · F ${food.fat}g${food.source === 'ai_estimate' ? ' · AI estimate' : ''}</div>
+        `;
+        resultsEl.appendChild(card);
+      });
+    }
+
+    async function logScannedItem(food) {
+      const res = await fetch('/api/food-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          food_name: food.name,
+          grams: food.estimatedGrams,
+          calories: food.calories,
+          protein: food.protein,
+          carbs: food.carbs,
+          fat: food.fat
+        })
       });
 
-      noteEl.after(resultDiv);
+      if (res.ok) {
+        document.getElementById('scanner-note').textContent = `Logged ${food.name}. Check the Nutrition Log tab to see it.`;
+      } else {
+        const data = await res.json();
+        document.getElementById('scanner-note').textContent = 'Could not log that item: ' + (data.error || 'unknown error');
+      }
     }
 
     // ---------- NUTRITION LOG ----------
