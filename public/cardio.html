@@ -97,10 +97,12 @@
 
     // GPS tracking state
     let gpsWatchId = null;
-    let lastPosition = null;   // { lat, lon, timestamp }
+    let lastPosition = null;   // { lat, lon, timestamp, accuracy }
     let totalDistanceKm = 0;
-    const MIN_MOVING_SPEED_KMH = 1.5; // below this, treat as "not moving" (filters standing still / GPS noise)
-    const MAX_REALISTIC_SPEED_KMH = 40; // above this, treat as GPS jump/error, ignore
+    const MIN_MOVING_SPEED_KMH = 1.5;      // below this, treat as "not moving" (filters standing still / GPS noise)
+    const MAX_REALISTIC_SPEED_KMH = 40;    // above this, treat as GPS jump/error, ignore
+    const MAX_ACCEPTABLE_ACCURACY_M = 30;  // ignore GPS fixes worse than this — too unreliable to trust
+    const MIN_TIME_DELTA_SEC = 2;          // ignore updates arriving faster than this — avoids speed spikes from tiny time gaps
 
     // Haversine formula: real-world distance between two GPS coordinates (in km)
     function haversineDistance(lat1, lon1, lat2, lon2) {
@@ -198,23 +200,46 @@
 
       gpsWatchId = navigator.geolocation.watchPosition(
         (position) => {
-          document.getElementById('gps-status').textContent = '📍 GPS active — tracking real movement';
-          const { latitude, longitude } = position.coords;
+          const { latitude, longitude, accuracy } = position.coords;
           const now = Date.now();
 
-          if (lastPosition) {
-            const distanceKm = haversineDistance(lastPosition.lat, lastPosition.lon, latitude, longitude);
-            const timeDeltaHours = (now - lastPosition.timestamp) / 1000 / 3600;
-            const speedKmh = timeDeltaHours > 0 ? distanceKm / timeDeltaHours : 0;
-
-            const MIN_DISTANCE_KM = 0.008; // ~8 meters — filters normal GPS jitter/noise
-if (distanceKm >= MIN_DISTANCE_KM && speedKmh >= MIN_MOVING_SPEED_KMH && speedKmh <= MAX_REALISTIC_SPEED_KMH) {
-  totalDistanceKm += distanceKm;
-  movingSeconds += (now - lastPosition.timestamp) / 1000;
-}
+          // Reject fixes too imprecise to trust (common indoors or with weak signal) —
+          // this is the main source of false "movement" while standing still.
+          if (accuracy && accuracy > MAX_ACCEPTABLE_ACCURACY_M) {
+            document.getElementById('gps-status').textContent = `📍 GPS signal weak (±${Math.round(accuracy)}m) — waiting for a better fix...`;
+            return;
           }
 
-          lastPosition = { lat: latitude, lon: longitude, timestamp: now };
+          document.getElementById('gps-status').textContent = '📍 GPS active — tracking real movement';
+
+          if (lastPosition) {
+            const timeDeltaSec = (now - lastPosition.timestamp) / 1000;
+
+            // Skip updates that arrive too fast — a tiny time gap turns small GPS drift
+            // into a huge computed "speed," which is how stationary jitter gets miscounted as walking.
+            if (timeDeltaSec < MIN_TIME_DELTA_SEC) {
+              return;
+            }
+
+            const distanceKm = haversineDistance(lastPosition.lat, lastPosition.lon, latitude, longitude);
+
+            // Noise floor scales with both fixes' accuracy — if the distance moved is smaller than
+            // the combined GPS uncertainty, it's not real movement, just drift.
+            const noiseFloorKm = Math.max(0.01, ((accuracy || 15) + (lastPosition.accuracy || 15)) / 1000);
+
+            const timeDeltaHours = timeDeltaSec / 3600;
+            const speedKmh = timeDeltaHours > 0 ? distanceKm / timeDeltaHours : 0;
+
+            if (distanceKm >= noiseFloorKm && speedKmh >= MIN_MOVING_SPEED_KMH && speedKmh <= MAX_REALISTIC_SPEED_KMH) {
+              totalDistanceKm += distanceKm;
+              movingSeconds += timeDeltaSec;
+            }
+
+            lastPosition = { lat: latitude, lon: longitude, timestamp: now, accuracy };
+          } else {
+            lastPosition = { lat: latitude, lon: longitude, timestamp: now, accuracy };
+          }
+
           updateTimerDisplay();
         },
         (error) => {
