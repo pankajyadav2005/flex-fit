@@ -41,6 +41,7 @@
               <h2>Which sports do you train for?</h2>
               <span id="sports-count" class="count-badge">0 selected</span>
             </div>
+            <input type="text" id="sport-search" placeholder="Search sports..." style="width:100%;padding:10px 12px;border:1px solid #e5e0da;border-radius:8px;font-size:14px;margin:16px 0;" oninput="renderSports()">
             <div id="sports-grid" class="card-grid"></div>
             <div class="button-row right">
               <button class="btn-primary" onclick="goToGoals()">Next →</button>
@@ -122,20 +123,23 @@
     let selectedFitness = 'Beginner';
 
     function renderSports() {
+      const searchTerm = (document.getElementById('sport-search')?.value || '').toLowerCase();
       const grid = document.getElementById('sports-grid');
       grid.innerHTML = '';
-      Object.keys(SPORTS_DATA).forEach(sport => {
-        const isSelected = selectedSports.includes(sport);
-        const card = document.createElement('div');
-        card.className = 'sport-card' + (isSelected ? ' selected' : '');
-        card.innerHTML = `
-          <div class="sport-icon">${SPORTS_DATA[sport].icon}</div>
-          <div class="sport-name">${sport}</div>
-          <div class="sport-goals-count">${SPORTS_DATA[sport].goals.length} goals</div>
-        `;
-        card.onclick = () => toggleSport(sport);
-        grid.appendChild(card);
-      });
+      Object.keys(SPORTS_DATA)
+        .filter(sport => sport.toLowerCase().includes(searchTerm))
+        .forEach(sport => {
+          const isSelected = selectedSports.includes(sport);
+          const card = document.createElement('div');
+          card.className = 'sport-card' + (isSelected ? ' selected' : '');
+          card.innerHTML = `
+            <div class="sport-icon">${SPORTS_DATA[sport].icon}</div>
+            <div class="sport-name">${sport}</div>
+            <div class="sport-goals-count">${SPORTS_DATA[sport].goals.length} goals</div>
+          `;
+          card.onclick = () => toggleSport(sport);
+          grid.appendChild(card);
+        });
       document.getElementById('sports-count').textContent = selectedSports.length + ' selected';
     }
 
