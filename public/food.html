@@ -26,6 +26,33 @@
     .macro-tip.warn strong {
       color: #d63a3a;
     }
+
+    .idea-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 16px;
+    }
+    .idea-card {
+      background: #f3ede5;
+      border-left: 3px solid #e8623d;
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+    .idea-card strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+    .idea-card p {
+      margin: 0;
+      font-size: 13px;
+      color: #555;
+      line-height: 1.5;
+    }
+    @media (max-width: 640px) {
+      .idea-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -101,13 +128,13 @@
 
         <!-- NUTRITION AI TAB -->
         <div id="panel-ai" class="stat-card hidden">
-          <p class="subtext">Add ingredients you have, and get a suggested meal with real combined nutrition.</p>
+          <p class="subtext">Add ingredients you have, and get a few suggested meal ideas with real combined nutrition.</p>
           <div class="ai-input-row">
             <input type="text" id="ai-ingredient-input" placeholder="Add an ingredient you have...">
             <button class="btn-secondary" onclick="addIngredientTag()">+</button>
           </div>
           <div id="ingredient-tags" class="pill-grid"></div>
-          <button class="btn-primary" onclick="generateFromIngredients()">✨ Generate Meal</button>
+          <button class="btn-primary" onclick="generateFromIngredients()">✨ Generate Meals</button>
           <div id="ai-result"></div>
         </div>
 
@@ -468,16 +495,19 @@
     }
 
     // ---------- NUTRITION AI ----------
+    function parseIngredientText(text) {
+      return text
+        .split(/,|&|\band\b/i)
+        .map(t => t.trim())
+        .filter(t => t.length > 0);
+    }
+
     function addIngredientTag() {
       const input = document.getElementById('ai-ingredient-input');
       const text = input.value.trim();
       if (!text) return;
 
-      // Split on commas so "egg,paneer" adds both as separate tags
-      text.split(',')
-        .map(t => t.trim())
-        .filter(t => t.length > 0)
-        .forEach(t => ingredientTags.push(t));
+      parseIngredientText(text).forEach(t => ingredientTags.push(t));
 
       input.value = '';
       renderIngredientTags();
@@ -495,7 +525,30 @@
       });
     }
 
+    function formatIngredientList(tags) {
+      if (tags.length === 1) return tags[0];
+      if (tags.length === 2) return `${tags[0]} and ${tags[1]}`;
+      return `${tags.slice(0, -1).join(', ')} and ${tags[tags.length - 1]}`;
+    }
+
+    // A small library of meal "concepts" — each one weaves the typed ingredients
+    // into a different style of meal, so Generate Meals gives real variety.
+    const MEAL_IDEAS = [
+      { title: "Quick bowl", desc: (ing) => `Build a high-protein bowl with ${ing} and a measured carb base.` },
+      { title: "Recovery plate", desc: (ing) => `Pair ${ing} with vegetables, a protein source and olive oil.` },
+      { title: "Power stir-fry", desc: (ing) => `Stir-fry ${ing} with mixed vegetables and a light sauce for a balanced dinner.` },
+      { title: "Loaded salad", desc: (ing) => `Toss ${ing} into a loaded salad with grains, greens and a simple dressing.` },
+      { title: "Protein scramble", desc: (ing) => `Scramble or sauté ${ing} together for a fast, protein-rich meal.` },
+      { title: "Light wrap", desc: (ing) => `Wrap ${ing} with greens in a whole-grain wrap for a quick, lighter option.` }
+    ];
+
     function generateFromIngredients() {
+      // Auto-add anything still typed but not yet turned into a tag
+      const input = document.getElementById('ai-ingredient-input');
+      if (input.value.trim()) {
+        addIngredientTag();
+      }
+
       if (ingredientTags.length === 0) {
         alert('Add at least one ingredient first.');
         return;
@@ -516,14 +569,26 @@
       });
 
       const resultDiv = document.getElementById('ai-result');
+
       if (matched.length === 0) {
         resultDiv.innerHTML = `<p class="subtext">None of those ingredients matched our nutrition database. Try common items like chicken, rice, eggs, oats, banana, dal, roti.</p>`;
         return;
       }
 
+      const ingredientText = formatIngredientList(ingredientTags);
+      const ideas = MEAL_IDEAS.slice(0, 4); // always show 4 varied meal ideas
+
       resultDiv.innerHTML = `
-        <div class="meal-slot">
-          <div class="session-name">Meal using: ${matched.join(', ')}</div>
+        <div class="idea-grid">
+          ${ideas.map(idea => `
+            <div class="idea-card">
+              <strong>${idea.title}</strong>
+              <p>${idea.desc(ingredientText)}</p>
+            </div>
+          `).join('')}
+        </div>
+        <div class="meal-slot" style="margin-top:16px;">
+          <div class="session-name">Combined nutrition (matched: ${matched.join(', ')})</div>
           <div class="summary-label">Assuming ~100g of each · ${Math.round(totals.calories)} kcal · P ${Math.round(totals.protein)}g · C ${Math.round(totals.carbs)}g · F ${Math.round(totals.fat)}g</div>
         </div>
       `;
