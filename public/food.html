@@ -4,6 +4,29 @@
   <meta charset="UTF-8">
   <title>FlexFit - Food</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    .macro-tip {
+      margin: 14px 0;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.5;
+      border-left: 3px solid #e8623d;
+      background: #fef3ee;
+      color: #5a3a2a;
+    }
+    .macro-tip.warn {
+      border-left-color: #d63a3a;
+      background: #fde8e8;
+      color: #6b2020;
+    }
+    .macro-tip strong {
+      color: #e8623d;
+    }
+    .macro-tip.warn strong {
+      color: #d63a3a;
+    }
+  </style>
 </head>
 <body>
 
@@ -72,6 +95,7 @@
             <div class="macro-bar"><div class="summary-label">Carbs</div><div id="bar-carbs" class="summary-num">0/0 g</div></div>
             <div class="macro-bar"><div class="summary-label">Fat</div><div id="bar-fat" class="summary-num">0/0 g</div></div>
           </div>
+          <div id="macro-suggestion" class="macro-tip hidden"></div>
           <div id="meal-list" class="session-list"></div>
         </div>
 
@@ -291,6 +315,8 @@
       document.getElementById('bar-carbs').textContent = `${Math.round(data.totals.carbs)}/${dietTarget.carbs} g`;
       document.getElementById('bar-fat').textContent = `${Math.round(data.totals.fat)}/${dietTarget.fat} g`;
 
+      renderMacroSuggestion(data.totals);
+
       const list = document.getElementById('meal-list');
       list.innerHTML = '';
       if (data.logs.length === 0) {
@@ -309,6 +335,66 @@
         `;
         list.appendChild(item);
       });
+    }
+
+    // ---------- MACRO-AWARE SUGGESTIONS ----------
+    function suggestFoodsFor(macro, excludeMacros) {
+      const minThreshold = macro === 'fat' ? 8 : 12;
+      return FOOD_DATABASE
+        .filter(f => f[macro] >= minThreshold)
+        .filter(f => excludeMacros.every(m => f[m] < 8))
+        .sort((a, b) => b[macro] - a[macro])
+        .slice(0, 3)
+        .map(f => f.name);
+    }
+
+    function renderMacroSuggestion(totals) {
+      const el = document.getElementById('macro-suggestion');
+
+      if (!dietTarget.hasProfile || !dietTarget.calories) {
+        el.classList.add('hidden');
+        return;
+      }
+
+      const proteinDone = dietTarget.protein > 0 && totals.protein >= dietTarget.protein;
+      const carbsDone = dietTarget.carbs > 0 && totals.carbs >= dietTarget.carbs;
+      const fatDone = dietTarget.fat > 0 && totals.fat >= dietTarget.fat;
+      const caloriesDone = dietTarget.calories > 0 && totals.calories >= dietTarget.calories;
+
+      el.classList.remove('warn');
+
+      if (caloriesDone) {
+        el.textContent = `🎯 You've hit your ${dietTarget.calories} kcal target for today. If you're still hungry, keep it light — very low-calorie options are best.`;
+        el.classList.add('warn');
+        el.classList.remove('hidden');
+        return;
+      }
+
+      // Exactly one macro not yet done, and at least one IS done → give a targeted suggestion
+      const doneCount = [proteinDone, carbsDone, fatDone].filter(Boolean).length;
+
+      if (proteinDone && !carbsDone && !fatDone) {
+        const foods = suggestFoodsFor('carbs', ['protein']);
+        el.innerHTML = `💪 <strong>Protein goal hit</strong> (${Math.round(totals.protein)}/${dietTarget.protein}g) — for your remaining calories, lean toward carbs${foods.length ? `: ${foods.join(', ')}` : ''}.`;
+        el.classList.remove('hidden');
+      } else if (carbsDone && !proteinDone && !fatDone) {
+        const foods = suggestFoodsFor('protein', ['carbs']);
+        el.innerHTML = `🍚 <strong>Carbs goal hit</strong> (${Math.round(totals.carbs)}/${dietTarget.carbs}g) — for your remaining calories, focus on protein${foods.length ? `: ${foods.join(', ')}` : ''}.`;
+        el.classList.remove('hidden');
+      } else if (fatDone && !proteinDone && !carbsDone) {
+        const foods = suggestFoodsFor('protein', ['fat']);
+        el.innerHTML = `🥑 <strong>Fat goal hit</strong> (${Math.round(totals.fat)}/${dietTarget.fat}g) — go for leaner options${foods.length ? `: ${foods.join(', ')}` : ''}.`;
+        el.classList.remove('hidden');
+      } else if (doneCount === 2) {
+        // Two macros done, one left — point specifically at what's still needed
+        let remainingMacro = !proteinDone ? 'protein' : (!carbsDone ? 'carbs' : 'fat');
+        const doneMacros = ['protein', 'carbs', 'fat'].filter(m => m !== remainingMacro);
+        const foods = suggestFoodsFor(remainingMacro, doneMacros);
+        el.innerHTML = `✅ Protein, carbs and fat are close — you mainly still need <strong>${remainingMacro}</strong>${foods.length ? `: ${foods.join(', ')}` : ''}.`;
+        el.classList.remove('hidden');
+      } else {
+        el.classList.add('hidden');
+      }
     }
 
     function populateFoodSelect() {
