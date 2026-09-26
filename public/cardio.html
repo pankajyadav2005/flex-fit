@@ -207,10 +207,11 @@
             const timeDeltaHours = (now - lastPosition.timestamp) / 1000 / 3600;
             const speedKmh = timeDeltaHours > 0 ? distanceKm / timeDeltaHours : 0;
 
-            if (speedKmh >= MIN_MOVING_SPEED_KMH && speedKmh <= MAX_REALISTIC_SPEED_KMH) {
-              totalDistanceKm += distanceKm;
-              movingSeconds += (now - lastPosition.timestamp) / 1000;
-            }
+            const MIN_DISTANCE_KM = 0.008; // ~8 meters — filters normal GPS jitter/noise
+if (distanceKm >= MIN_DISTANCE_KM && speedKmh >= MIN_MOVING_SPEED_KMH && speedKmh <= MAX_REALISTIC_SPEED_KMH) {
+  totalDistanceKm += distanceKm;
+  movingSeconds += (now - lastPosition.timestamp) / 1000;
+}
           }
 
           lastPosition = { lat: latitude, lon: longitude, timestamp: now };
