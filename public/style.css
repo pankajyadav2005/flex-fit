@@ -788,12 +788,26 @@ body {
   border-width: 2px;
 }
 
-.today-badge {
+.day-badges {
   position: absolute;
   top: 14px;
   right: 14px;
+  display: flex;
+  gap: 6px;
+}
+
+.today-badge {
   background: #fef3ee;
   color: #e8623d;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+.complete-badge {
+  background: #e3f5e8;
+  color: #2a9d55;
   font-size: 11px;
   font-weight: 600;
   padding: 3px 10px;
