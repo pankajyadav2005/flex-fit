@@ -42,7 +42,7 @@
             </div>
 
             <div class="stat-card timer-card">
-              <div class="timer-activity-name" id="timer-activity-name">JOGGING (8 KM/H)</div>
+              <div class="timer-activity-name" id="timer-activity-name">SELECT AN ACTIVITY</div>
               <div class="timer-display" id="timer-display">00:00:00</div>
               <div class="timer-stats">
                 <div>
@@ -137,9 +137,6 @@
         });
       } else if (activeCategory) {
         activitiesToShow = CARDIO_CATEGORIES[activeCategory];
-      } else {
-        activitiesToShow = CARDIO_CATEGORIES["Running"];
-        activeCategory = "Running";
       }
 
       activitiesToShow.forEach(a => {
@@ -365,7 +362,6 @@
     async function init() {
       await loadUserWeight();
       renderCategories();
-      selectActivity(CARDIO_CATEGORIES["Running"][0]);
       loadHistory();
     }
 
