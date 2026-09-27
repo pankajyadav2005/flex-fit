@@ -108,6 +108,8 @@
           <p class="subtext" id="scanner-subtext">Snap or upload a photo of your plate, then click Scan — our AI identifies each item and estimates the portion size, then matches it to real nutrition data.</p>
           <img id="photo-preview" class="hidden photo-preview">
           <p id="scanner-note" class="subtext scanner-note hidden"></p>
+          <div id="scanner-macro-tip" class="macro-tip hidden"></div>
+          <button id="log-all-btn" class="btn-primary hidden" onclick="logAllScannedItems()" style="margin-bottom:12px;">+ Log All Items</button>
           <div id="scan-results"></div>
         </div>
 
@@ -164,6 +166,7 @@
     let ingredientTags = [];
     let currentPhotoBase64 = null;
     let currentPhotoMime = 'image/jpeg';
+    let currentScanResults = [];
 
     function switchTab(tab) {
       ['diet', 'scanner', 'log', 'ai'].forEach(t => {
@@ -231,7 +234,10 @@
       const preview = document.getElementById('photo-preview');
       document.getElementById('scanner-subtext').textContent = 'Processing photo...';
       document.getElementById('scanner-note').classList.add('hidden');
+      document.getElementById('scanner-macro-tip').classList.add('hidden');
+      document.getElementById('log-all-btn').classList.add('hidden');
       document.getElementById('scan-results').innerHTML = '';
+      currentScanResults = [];
 
       const img = new Image();
       const reader = new FileReader();
@@ -277,9 +283,12 @@
 
       const noteEl = document.getElementById('scanner-note');
       const resultsEl = document.getElementById('scan-results');
+      const logAllBtn = document.getElementById('log-all-btn');
       noteEl.classList.remove('hidden');
       noteEl.textContent = 'Analyzing your plate — identifying items and estimating portions...';
       resultsEl.innerHTML = '';
+      logAllBtn.classList.add('hidden');
+      document.getElementById('scanner-macro-tip').classList.add('hidden');
 
       const res = await fetch('/api/scan-food', {
         method: 'POST',
@@ -299,7 +308,11 @@
         return;
       }
 
-      noteEl.textContent = `Found ${data.matchedFoods.length} item${data.matchedFoods.length > 1 ? 's' : ''} — tap "Log it" to add to today's log.`;
+      currentScanResults = data.matchedFoods;
+
+      noteEl.textContent = `Found ${data.matchedFoods.length} item${data.matchedFoods.length > 1 ? 's' : ''} — log them individually or all at once.`;
+      logAllBtn.classList.remove('hidden');
+      logAllBtn.textContent = `+ Log All ${data.matchedFoods.length} Items`;
 
       data.matchedFoods.forEach(food => {
         const card = document.createElement('div');
@@ -331,9 +344,51 @@
 
       if (res.ok) {
         document.getElementById('scanner-note').textContent = `Logged ${food.name}. Check the Nutrition Log tab to see it.`;
+
+        const logRes = await fetch('/api/food-log');
+        if (logRes.ok) {
+          const logData = await logRes.json();
+          renderMacroSuggestion(logData.totals, 'scanner-macro-tip');
+        }
       } else {
         const data = await res.json();
         document.getElementById('scanner-note').textContent = 'Could not log that item: ' + (data.error || 'unknown error');
+      }
+    }
+
+    async function logAllScannedItems() {
+      if (currentScanResults.length === 0) return;
+
+      const noteEl = document.getElementById('scanner-note');
+      noteEl.textContent = `Logging ${currentScanResults.length} items...`;
+
+      let successCount = 0;
+      for (const food of currentScanResults) {
+        const res = await fetch('/api/food-log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            food_name: food.name,
+            grams: food.estimatedGrams,
+            calories: food.calories,
+            protein: food.protein,
+            carbs: food.carbs,
+            fat: food.fat
+          })
+        });
+        if (res.ok) successCount++;
+      }
+
+      noteEl.textContent = `Logged ${successCount} of ${currentScanResults.length} items. Check the Nutrition Log tab to see today's totals.`;
+      document.getElementById('log-all-btn').classList.add('hidden');
+      document.getElementById('scan-results').innerHTML = '';
+      currentScanResults = [];
+
+      // Immediately check macro status after logging, right here in the Scanner tab
+      const logRes = await fetch('/api/food-log');
+      if (logRes.ok) {
+        const logData = await logRes.json();
+        renderMacroSuggestion(logData.totals, 'scanner-macro-tip');
       }
     }
 
@@ -381,8 +436,8 @@
         .map(f => f.name);
     }
 
-    function renderMacroSuggestion(totals) {
-      const el = document.getElementById('macro-suggestion');
+    function renderMacroSuggestion(totals, targetId = 'macro-suggestion') {
+      const el = document.getElementById(targetId);
 
       if (!dietTarget.hasProfile || !dietTarget.calories) {
         el.classList.add('hidden');
