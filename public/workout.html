@@ -37,11 +37,19 @@
 
         <!-- WEEKLY SPLIT VIEW -->
         <div id="view-split">
-          <div class="panel-header">
+          <div id="sport-switcher" class="category-tabs hidden" style="margin-top:14px;"></div>
+          <div class="panel-header" style="margin-top:14px;">
             <span id="tailored-label">Tailored to: --</span>
             <button class="btn-secondary" onclick="regenerateSplit()">🔄 AI Regenerate</button>
           </div>
           <div id="day-grid" class="card-grid three-col"></div>
+        </div>
+
+        <!-- DAY DETAIL VIEW (shows that day's real sport-specific exercises) -->
+        <div id="view-day" class="hidden">
+          <button class="btn-secondary" onclick="switchView('split')">← Back to Weekly Split</button>
+          <h2 id="day-view-title" style="margin-top:14px;"></h2>
+          <div id="day-exercise-grid" class="exercise-grid" style="margin-top:14px;"></div>
         </div>
 
         <!-- EXERCISE LIBRARY VIEW -->
@@ -58,17 +66,28 @@
   <script src="workoutData.js"></script>
   <script src="notifications.js"></script>
   <script>
-    let currentTemplate = 'Full Body';
-    let currentTemplateIndex = 0;
-    const templateNames = Object.keys(WEEKLY_TEMPLATES);
+    // ---------- STATE ----------
+    let sports = [];              // sports saved on the user's profile
+    let primarySport = 'General Fitness';
+    let archetype = 'general';    // key into ARCHETYPE_TEMPLATES
+    let archetypeLabel = 'general fitness';
     let completions = [];
     let activeMuscle = null;
+    let regenSeed = 0;            // bumped by "AI Regenerate" to swap in alternate exercises
+    let currentDayKey = null;
 
-    const TODAY_NAME = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()];
+    const DAY_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const REST_DAYS = {
+      Tuesday: { icon: '🧘', name: 'Active Recovery', note: 'Recovery day — stretch, walk, sleep well.' },
+      Thursday: { icon: '😴', name: 'Rest Day', note: 'Recovery day — stretch, walk, sleep well.' },
+      Sunday: { icon: '😴', name: 'Rest Day', note: 'Recovery day — stretch, walk, sleep well.' }
+    };
+    const TODAY_NAME = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date().getDay()];
 
     function switchView(view) {
       document.getElementById('view-split').classList.toggle('hidden', view !== 'split');
       document.getElementById('view-library').classList.toggle('hidden', view !== 'library');
+      document.getElementById('view-day').classList.toggle('hidden', view !== 'day');
       document.getElementById('tab-split').classList.toggle('active', view === 'split');
       document.getElementById('tab-library').classList.toggle('active', view === 'library');
       if (view === 'library' && document.getElementById('exercise-grid').innerHTML === '') {
@@ -77,33 +96,101 @@
       }
     }
 
-    async function loadWorkout() {
-      const res = await fetch('/api/workout');
+    // ---------- LOAD / SPORT SWITCHING ----------
+    async function loadWorkout(sportOverride) {
+      const url = sportOverride ? `/api/workout?sport=${encodeURIComponent(sportOverride)}` : '/api/workout';
+      const res = await fetch(url);
       if (res.status === 401) { window.location.href = '/'; return; }
       const data = await res.json();
-      currentTemplate = data.templateName;
-      currentTemplateIndex = templateNames.indexOf(currentTemplate);
+
+      sports = data.sports || [];
+      primarySport = data.primarySport;
+      archetype = data.archetype;
+      archetypeLabel = data.archetypeLabel;
       completions = data.completions;
-      document.getElementById('tailored-label').textContent = `Tailored to: ${currentTemplate === 'Full Body' ? 'general fitness' : 'push pull legs'}`;
+      regenSeed = 0;
+
+      document.getElementById('tailored-label').textContent = `Tailored to: ${primarySport} (${archetypeLabel})`;
+      renderSportSwitcher();
       renderDays();
     }
 
+    function renderSportSwitcher() {
+      const el = document.getElementById('sport-switcher');
+      if (sports.length <= 1) {
+        el.classList.add('hidden');
+        el.innerHTML = '';
+        return;
+      }
+      el.classList.remove('hidden');
+      el.innerHTML = sports.map(s => `
+        <button class="category-tab${s === primarySport ? ' active' : ''}" onclick="loadWorkout('${s.replace(/'/g, "\\'")}')">${s}</button>
+      `).join('');
+    }
+
     function regenerateSplit() {
-      // Rule-based: cycles to the next template rather than random AI generation
-      currentTemplateIndex = (currentTemplateIndex + 1) % templateNames.length;
-      currentTemplate = templateNames[currentTemplateIndex];
-      document.getElementById('tailored-label').textContent = `Tailored to: ${currentTemplate === 'Full Body' ? 'general fitness' : 'push pull legs'}`;
+      // Rule-based variety: swaps each exercise for another one that targets
+      // the same muscle group(s), rather than random/generic AI generation.
+      regenSeed++;
       renderDays();
+    }
+
+    // ---------- WEEKLY SPLIT (sport-specific) ----------
+    function getTemplate() {
+      return ARCHETYPE_TEMPLATES[archetype] || ARCHETYPE_TEMPLATES.general;
+    }
+
+    // Enrich the archetype's {name, sets, reps} entries with EXERCISE_LIBRARY
+    // details (muscles / difficulty / how-to / rest) when a match exists, and
+    // optionally swap for an alternate exercise targeting the same muscle(s)
+    // when "AI Regenerate" has been clicked.
+    function getDayExercises(exList) {
+      return exList.map((item, idx) => {
+        let libMatch = EXERCISE_LIBRARY.find(le => le.name.toLowerCase() === item.name.toLowerCase());
+
+        if (regenSeed > 0 && libMatch) {
+          const candidates = EXERCISE_LIBRARY.filter(le => le.muscles.some(m => libMatch.muscles.includes(m)));
+          if (candidates.length > 1) {
+            libMatch = candidates[(idx + regenSeed) % candidates.length];
+          }
+        }
+
+        return {
+          name: libMatch ? libMatch.name : item.name,
+          sets: item.sets,
+          reps: item.reps,
+          details: libMatch || { muscles: [], difficulty: null, howTo: null, restSeconds: null }
+        };
+      });
     }
 
     function renderDays() {
       const grid = document.getElementById('day-grid');
       grid.innerHTML = '';
-      const days = WEEKLY_TEMPLATES[currentTemplate];
+      const template = getTemplate();
 
-      days.forEach(d => {
-        const isToday = d.day === TODAY_NAME;
-        const isDone = completions.some(c => c.day_name === d.day);
+      DAY_ORDER.forEach(day => {
+        const isToday = day === TODAY_NAME;
+        const trainDay = template[day];
+        const isRest = !trainDay;
+        const isDone = completions.some(c => c.day_name === day);
+
+        let icon, name, summary, exerciseCount = 0;
+
+        if (isRest) {
+          const restInfo = REST_DAYS[day];
+          icon = restInfo.icon;
+          name = restInfo.name;
+          summary = restInfo.note;
+        } else {
+          icon = trainDay.icon;
+          name = trainDay.name;
+          const dayExercises = getDayExercises(trainDay.exercises);
+          exerciseCount = dayExercises.length;
+          const muscles = [...new Set(dayExercises.flatMap(e => e.details.muscles || []))];
+          summary = muscles.length ? muscles.slice(0, 4).join(', ') : `${exerciseCount} exercises`;
+        }
+
         const card = document.createElement('div');
         card.className = 'day-card' + (isToday ? ' today' : '');
         card.innerHTML = `
@@ -111,26 +198,61 @@
             ${isToday ? '<span class="today-badge">Today</span>' : ''}
             ${isDone ? '<span class="complete-badge">✓ Complete</span>' : ''}
           </div>
-          <div class="day-icon">${d.icon}</div>
-          <div class="day-label">${d.day.toUpperCase()}</div>
-          <div class="day-workout-name">${d.name}</div>
-          <div class="summary-label">${d.rest ? d.note : d.muscles.join(', ')}</div>
-          ${!d.rest ? `<a href="#" class="view-exercises-link" onclick="viewDayExercises(event, '${d.muscles.join(",")}')">View Exercises →</a>` : ''}
-          ${!d.rest && isToday ? `
-            <button class="btn-primary complete-btn" ${isDone ? 'disabled' : ''} onclick="markComplete('${d.day}','${d.name}')">${isDone ? '✓ Completed' : 'Mark Complete'}</button>
+          <div class="day-icon">${icon}</div>
+          <div class="day-label">${day.toUpperCase()}</div>
+          <div class="day-workout-name">${name}</div>
+          <div class="summary-label">${summary}</div>
+          ${!isRest ? `<a href="#" class="view-exercises-link" onclick="viewDayExercises(event, '${day}')">View Exercises (${exerciseCount}) →</a>` : ''}
+          ${!isRest && isToday ? `
+            <button class="btn-primary complete-btn" ${isDone ? 'disabled' : ''} onclick="markComplete('${day}','${name}')">${isDone ? '✓ Completed' : 'Mark Complete'}</button>
           ` : ''}
         `;
         grid.appendChild(card);
       });
     }
 
-    function viewDayExercises(e, musclesStr) {
+    // ---------- DAY DETAIL (real exercises for that sport + day) ----------
+    function viewDayExercises(e, day) {
       e.preventDefault();
-      switchView('library');
-      const muscles = musclesStr.split(',');
-      activeMuscle = muscles[0];
-      renderMuscleTabs();
-      renderExercises();
+      const template = getTemplate();
+      const trainDay = template[day];
+      if (!trainDay) return;
+
+      currentDayKey = day;
+      const dayExercises = getDayExercises(trainDay.exercises);
+
+      document.getElementById('day-view-title').textContent = `${day} — ${trainDay.name}`;
+      switchView('day');
+      renderDayExerciseGrid(dayExercises);
+    }
+
+    function renderDayExerciseGrid(dayExercises) {
+      const grid = document.getElementById('day-exercise-grid');
+      grid.innerHTML = '';
+
+      dayExercises.forEach(exItem => {
+        const card = document.createElement('div');
+        card.className = 'exercise-card';
+        const diffClass = exItem.details.difficulty ? 'diff-' + exItem.details.difficulty.toLowerCase() : '';
+        card.innerHTML = `
+          <div class="exercise-header">
+            <strong>${exItem.name}</strong>
+            ${exItem.details.difficulty ? `<span class="diff-badge ${diffClass}">${exItem.details.difficulty}</span>` : ''}
+          </div>
+          <div class="summary-label">${exItem.sets} × ${exItem.reps}${exItem.details.restSeconds ? ` · ⏱ ${exItem.details.restSeconds}s rest` : ''}</div>
+          ${exItem.details.muscles && exItem.details.muscles.length ? `
+            <div class="pill-grid exercise-tags">
+              ${exItem.details.muscles.map(m => `<span class="mini-tag">${m}</span>`).join('')}
+            </div>` : ''}
+          ${exItem.details.howTo ? `
+            <details class="how-to">
+              <summary>How to do it</summary>
+              <p>${exItem.details.howTo}</p>
+            </details>` : ''}
+          <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(exItem.name + ' exercise form')}" target="_blank" class="watch-demo-link">▶ Watch demo</a>
+        `;
+        grid.appendChild(card);
+      });
     }
 
     async function markComplete(day, workoutName) {
@@ -145,7 +267,7 @@
       }
     }
 
-    // ---------- EXERCISE LIBRARY ----------
+    // ---------- EXERCISE LIBRARY (unchanged: full browsable list) ----------
     function renderMuscleTabs() {
       const container = document.getElementById('muscle-tabs');
       container.innerHTML = '';

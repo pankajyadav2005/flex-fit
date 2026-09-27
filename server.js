@@ -6,6 +6,7 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const db = require('./db');
 const FOOD_DATABASE = require('./foodDatabase');
+const WORKOUT_DATA = require('./public/workoutData.js'); // sport -> archetype mapping + templates
 
 const app = express();
 
@@ -388,13 +389,22 @@ Respond with ONLY valid JSON in this exact shape, no other text, no markdown fen
   }
 });
 
-// GET workout template + this week's completion status
-// GET workout template + this week's completion status
+// GET workout plan + this week's completion status.
+// Now tailored to the sport(s) the user picked in their profile:
+//   profile.sports -> SPORT_TO_ARCHETYPE -> which ARCHETYPE_TEMPLATES key to render.
+// If the user has more than one sport saved, pass ?sport=<Name> to view that
+// specific sport's plan (workout.html renders a small switcher for this).
 app.get('/api/workout', requireLogin, (req, res) => {
   const profile = db.prepare('SELECT * FROM profiles WHERE user_id = ?').get(req.currentUserId);
-  const templateName = (profile && (profile.fitness_level === 'Advanced' || profile.fitness_level === 'Elite'))
-    ? 'Push Pull Legs' : 'Full Body';
   const sports = profile ? JSON.parse(profile.sports || '[]') : [];
+
+  const requestedSport = req.query.sport;
+  const primarySport = (requestedSport && sports.includes(requestedSport))
+    ? requestedSport
+    : (sports[0] || 'General Fitness');
+
+  const archetype = WORKOUT_DATA.SPORT_TO_ARCHETYPE[primarySport] || 'general';
+  const archetypeLabel = WORKOUT_DATA.SPORT_ARCHETYPE_LABELS[archetype] || 'general fitness';
 
   // Get completions from the last 7 days
   const completions = db.prepare(`
@@ -402,7 +412,7 @@ app.get('/api/workout', requireLogin, (req, res) => {
     WHERE user_id = ? AND logged_at >= date('now', '-7 days')
   `).all(req.currentUserId);
 
-  res.json({ templateName, completions, sports });
+  res.json({ sports, primarySport, archetype, archetypeLabel, completions });
 });
 
 // POST mark a workout as complete
@@ -459,7 +469,7 @@ app.get('/api/summary', requireLogin, (req, res) => {
   `).get(req.currentUserId).count;
 
   res.json({
-    totalWorkouts: 5, // 5 non-rest days in the standard weekly template
+    totalWorkouts: 4, // every sport archetype trains exactly 4 days/week (Mon/Wed/Fri/Sat)
     completedWorkouts: workoutsThisWeek,
     caloriesBurned: Math.round(cardioTotals.totalKcal),
     weightEntries: weightCount

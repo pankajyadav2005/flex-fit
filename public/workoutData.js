@@ -1,4 +1,6 @@
 // Two real weekly split templates, chosen based on fitness level (rule-based, not random)
+// NOTE: kept for backward compatibility / the exercise library browser. The Weekly Split
+// view itself now uses ARCHETYPE_TEMPLATES (sport-based) instead of these.
 const WEEKLY_TEMPLATES = {
   "Full Body": [
     { day: "Monday", icon: "🔥", name: "Full Body A", muscles: ["Chest", "Back", "Quads", "Core"], rest: false },
@@ -249,5 +251,29 @@ const ARCHETYPE_TEMPLATES = {
     Wednesday: { icon: "🧍", name: "Core Stability", exercises: [ex("Plank",3,"30-60 sec"), ex("Hanging Leg Raise",3,"10-15"), ex("Russian Twist",3,"20"), ex("Ab Wheel Rollout",3,"8-12"), ex("Bicycle Crunch",3,"20"), ex("Glute Bridge",3,"15-20"), ex("Hip Thrust",3,"10-12"), ex("Standing Calf Raise",4,"15-20")] },
     Friday:    { icon: "💪", name: "Upper Mobility & Strength", exercises: [ex("Face Pull",3,"15-20"), ex("Overhead Press",3,"8-10"), ex("Push-Up",3,"12-20"), ex("Pull-Up",4,"6-10"), ex("Seated Cable Row",3,"10-12"), ex("Plank",3,"30-60 sec"), ex("Russian Twist",3,"20"), ex("Bicycle Crunch",3,"20")] },
     Saturday:  { icon: "⚖️", name: "Lower Stability & Balance", exercises: [ex("Bulgarian Split Squat",3,"10 each leg"), ex("Walking Lunges",3,"12 each leg"), ex("Standing Calf Raise",4,"15-20"), ex("Hip Thrust",3,"10-12"), ex("Glute Bridge",3,"15-20"), ex("Plank",3,"30-60 sec"), ex("Single-Leg Calf Raise",3,"12 each leg"), ex("Step-Up",3,"10 each leg")] }
+  },
+
+  // NEW: fallback / "General Fitness" archetype. Previously referenced by
+  // SPORT_TO_ARCHETYPE (and SPORT_ARCHETYPE_LABELS) but never actually defined,
+  // so anyone with no sport picked (or who picked "General Fitness") had no plan.
+  general: {
+    Monday:    { icon: "🔥", name: "Full Body A", exercises: [ex("Barbell Back Squat",3,"8-10"), ex("Push-Up",3,"12-20"), ex("Seated Cable Row",3,"10-12"), ex("Dumbbell Chest Press",3,"8-12"), ex("Plank",3,"30-60 sec"), ex("Glute Bridge",3,"15-20"), ex("Lat Pulldown",3,"10-12"), ex("Standing Calf Raise",3,"15-20")] },
+    Wednesday: { icon: "🚶", name: "Active Cardio + Core", exercises: [ex("Jump Rope",3,"60 sec"), ex("Mountain Climbers",3,"30 sec"), ex("Bicycle Crunch",3,"20"), ex("Russian Twist",3,"20"), ex("Walking Lunges",3,"12 each leg"), ex("Plank",3,"30-60 sec"), ex("Glute Bridge",3,"15-20"), ex("Standing Calf Raise",3,"15-20")] },
+    Friday:    { icon: "💪", name: "Full Body B", exercises: [ex("Goblet Squat",3,"10-12"), ex("Incline Dumbbell Press",3,"8-10"), ex("Single-Arm Dumbbell Row",3,"10-12"), ex("Overhead Press",3,"8-10"), ex("Hip Thrust",3,"10-12"), ex("Hammer Curl",3,"10-12"), ex("Tricep Rope Pushdown",3,"12-15"), ex("Plank",3,"30-60 sec")] },
+    Saturday:  { icon: "⚡", name: "Conditioning", exercises: [ex("Burpees",3,"10-12"), ex("Kettlebell Swing",3,"12-15"), ex("Box Jump",3,"6-8"), ex("Push-Up",3,"12-20"), ex("Mountain Climbers",3,"30 sec"), ex("Battle Ropes",3,"30 sec"), ex("Wall Ball",3,"12-15"), ex("Plank",3,"30-60 sec")] }
   }
 };
+
+// Expose everything to Node (server.js) as well as the browser.
+// In the browser `module` is undefined, so this block is simply skipped
+// and all the `const`s above stay as normal global variables, exactly as before.
+if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
+  module.exports = {
+    WEEKLY_TEMPLATES,
+    EXERCISE_LIBRARY,
+    MUSCLE_GROUPS,
+    SPORT_ARCHETYPE_LABELS,
+    SPORT_TO_ARCHETYPE,
+    ARCHETYPE_TEMPLATES
+  };
+}
