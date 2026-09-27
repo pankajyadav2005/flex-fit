@@ -549,64 +549,25 @@ html[data-theme="dark"] .send-btn:hover {
 }
 
 /* =========================================================
-   FIX WHITE STAT BOXES IN DARK MODE
+   FIX SUMMARY BOXES - CARDIO + PROGRESS
+   Exact class used by cardio.html and progress.html
    ========================================================= */
 
-/* Cardio / Progress statistic boxes */
-html[data-theme="dark"] .session-stat,
-html[data-theme="dark"] .session-stat-card,
-html[data-theme="dark"] .history-stat,
-html[data-theme="dark"] .history-stat-card,
-html[data-theme="dark"] .summary-stat,
-html[data-theme="dark"] .summary-stat-card,
-html[data-theme="dark"] .progress-stat,
-html[data-theme="dark"] .progress-stat-card,
-html[data-theme="dark"] .stat-box,
-html[data-theme="dark"] .stat-item,
-html[data-theme="dark"] .summary-item {
+html[data-theme="dark"] .summary-box {
   background: var(--ff-card) !important;
+  border: 1px solid var(--ff-border) !important;
   color: var(--ff-text) !important;
-  border-color: var(--ff-border) !important;
+  box-shadow: none !important;
 }
 
-/* Text inside those boxes */
-html[data-theme="dark"] .session-stat *,
-html[data-theme="dark"] .session-stat-card *,
-html[data-theme="dark"] .history-stat *,
-html[data-theme="dark"] .history-stat-card *,
-html[data-theme="dark"] .summary-stat *,
-html[data-theme="dark"] .summary-stat-card *,
-html[data-theme="dark"] .progress-stat *,
-html[data-theme="dark"] .progress-stat-card *,
-html[data-theme="dark"] .stat-box *,
-html[data-theme="dark"] .stat-item *,
-html[data-theme="dark"] .summary-item * {
-  color: inherit;
-}
-
-
-/* =========================================================
-   EXTRA CARD / STAT OVERRIDE
-   ========================================================= */
-
-html[data-theme="dark"] .card,
-html[data-theme="dark"] .stat,
-html[data-theme="dark"] .summary-card,
-html[data-theme="dark"] .metric-card {
-  background: var(--ff-card) !important;
-  color: var(--ff-text) !important;
-  border-color: var(--ff-border) !important;
-}
-
-
-/* Orange numbers / important values */
-html[data-theme="dark"] .session-kcal,
-html[data-theme="dark"] .session-minutes,
-html[data-theme="dark"] .stat-value,
-html[data-theme="dark"] .summary-value,
-html[data-theme="dark"] .metric-value {
+html[data-theme="dark"] .summary-box .summary-num {
   color: var(--ff-accent) !important;
 }
+
+html[data-theme="dark"] .summary-box .summary-label {
+  color: var(--ff-muted) !important;
+}
+
 
 /* =========================================================
    END OF FLEXFIT THEME
