@@ -1,29 +1,41 @@
 // theme.js
-// Include this on every page, right after style.css is applied (anywhere before </body> is fine,
-// e.g. next to the other <script> tags at the bottom).
-// It inserts a black/white theme toggle button directly above "Sign Out" in the sidebar,
-// and applies/remembers the chosen theme via localStorage + a data-theme attribute on <html>.
+// Include this on every page, anywhere before </body> (next to your other <script> tags).
+// Inserts a "Theme: System / Light / Dark" row directly above "Sign Out" in the sidebar.
+// Cycles System -> Light -> Dark -> System... on click, and persists the choice.
+// "System" means: follow the OS/browser's prefers-color-scheme automatically.
 
 (function () {
-  const STORAGE_KEY = 'flexfit-theme';
+  const STORAGE_KEY = 'flexfit-theme'; // stored value is one of: 'system' | 'light' | 'dark'
+  const ORDER = ['system', 'light', 'dark'];
+  const LABELS = { system: 'Theme: System', light: 'Theme: Light', dark: 'Theme: Dark' };
 
-  function applyTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem(STORAGE_KEY, theme);
-    const btn = document.getElementById('theme-toggle-btn');
-    if (btn) {
-      btn.textContent = theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
-    }
+  const media = window.matchMedia('(prefers-color-scheme: dark)');
+
+  function resolvedTheme(mode) {
+    if (mode === 'system') return media.matches ? 'dark' : 'light';
+    return mode;
   }
 
-  function toggleTheme() {
-    const current = document.documentElement.getAttribute('data-theme') || 'light';
-    applyTheme(current === 'dark' ? 'light' : 'dark');
+  function applyMode(mode) {
+    document.documentElement.setAttribute('data-theme', resolvedTheme(mode));
+    document.documentElement.setAttribute('data-theme-mode', mode);
+    localStorage.setItem(STORAGE_KEY, mode);
+    const btn = document.getElementById('theme-toggle-btn');
+    if (btn) btn.textContent = LABELS[mode];
+  }
+
+  function getMode() {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return ORDER.includes(stored) ? stored : 'system';
+  }
+
+  function cycleMode() {
+    const current = getMode();
+    const next = ORDER[(ORDER.indexOf(current) + 1) % ORDER.length];
+    applyMode(next);
   }
 
   function insertToggleButton() {
-    // Finds the "Sign Out" link (matches the sidebar-signout class used across FlexFit pages)
-    // and inserts the theme button immediately before it.
     const signOutLink = document.querySelector('.sidebar-signout[onclick*="signOut"]')
       || Array.from(document.querySelectorAll('.sidebar-signout')).find(el => /sign out/i.test(el.textContent))
       || document.querySelector('.sidebar-signout');
@@ -40,16 +52,20 @@
     btn.style.width = '100%';
     btn.style.font = 'inherit';
     btn.style.color = 'inherit';
-    btn.onclick = toggleTheme;
+    btn.style.marginTop = 'auto';
+    btn.onclick = cycleMode;
 
     signOutLink.parentNode.insertBefore(btn, signOutLink);
-    btn.textContent = (document.documentElement.getAttribute('data-theme') === 'dark') ? '☀️ Light Mode' : '🌙 Dark Mode';
+    btn.textContent = LABELS[getMode()];
   }
 
-  // Apply saved theme immediately (before paint would be ideal, but this still runs
-  // before the rest of body content is interactive).
-  const saved = localStorage.getItem(STORAGE_KEY) || 'light';
-  applyTheme(saved);
+  // Apply saved mode immediately, before the rest of the page paints.
+  applyMode(getMode());
+
+  // If the user is on "system" and the OS theme changes while the page is open, follow it live.
+  media.addEventListener('change', () => {
+    if (getMode() === 'system') applyMode('system');
+  });
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', insertToggleButton);

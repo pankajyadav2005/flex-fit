@@ -449,24 +449,122 @@ app.post('/api/workout/complete', requireLogin, (req, res) => {
 });
 
 // GET dashboard overview - combines data from all features for the landing page
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const WEEKLY_WORKOUT_TARGET = 4; // every sport archetype trains Mon/Wed/Fri/Sat
+
 app.get('/api/dashboard', requireLogin, (req, res) => {
   const profile = db.prepare('SELECT * FROM profiles WHERE user_id = ?').get(req.currentUserId);
   const user = db.prepare('SELECT name FROM users WHERE id = ?').get(req.currentUserId);
 
-  const latestWeight = db.prepare('SELECT * FROM weight_logs WHERE user_id = ? ORDER BY logged_at DESC LIMIT 1').get(req.currentUserId);
-  const cardioTotals = db.prepare('SELECT COALESCE(SUM(calories),0) as totalKcal FROM cardio_sessions WHERE user_id = ? AND logged_at >= date(\'now\', \'-7 days\')').get(req.currentUserId);
-  const workoutsThisWeek = db.prepare('SELECT COUNT(*) as count FROM workout_logs WHERE user_id = ? AND logged_at >= date(\'now\', \'-7 days\')').get(req.currentUserId);
-  const todaysFood = db.prepare('SELECT COALESCE(SUM(calories),0) as totalKcal FROM food_logs WHERE user_id = ? AND date(logged_at) = date(\'now\')').get(req.currentUserId);
+  if (!profile) {
+    return res.json({ hasProfile: false, userName: user.name });
+  }
+
+  const sports = JSON.parse(profile.sports || '[]');
+  const goals = JSON.parse(profile.goals || '[]');
+  const todayName = DAY_NAMES[new Date().getDay()];
+
+  // ---- Today's sport-specific workout (same logic as /api/workout) ----
+  const primarySport = sports[0] || 'General Fitness';
+  const archetype = WORKOUT_DATA.SPORT_TO_ARCHETYPE[primarySport] || 'general';
+  const template = WORKOUT_DATA.ARCHETYPE_TEMPLATES[archetype] || WORKOUT_DATA.ARCHETYPE_TEMPLATES.general;
+  const trainDay = template[todayName];
+  const isRestToday = !trainDay;
+
+  const doneToday = db.prepare(`
+    SELECT id FROM workout_logs WHERE user_id = ? AND day_name = ? AND logged_at = date('now')
+  `).get(req.currentUserId, todayName);
+
+  const workoutsThisWeek = db.prepare(`
+    SELECT COUNT(*) as count FROM workout_logs WHERE user_id = ? AND logged_at >= date('now', '-7 days')
+  `).get(req.currentUserId).count;
+
+  // ---- Weight ----
+  const latestWeightRow = db.prepare('SELECT * FROM weight_logs WHERE user_id = ? ORDER BY logged_at DESC LIMIT 1').get(req.currentUserId);
+  const currentWeight = latestWeightRow ? latestWeightRow.weight : profile.weight;
+
+  // ---- Calorie / macro targets (Mifflin-St Jeor, same formula as /api/food/target) ----
+  let calorieTarget = 0, proteinTarget = 0, carbsTarget = 0, fatTarget = 0;
+  if (profile.weight && profile.height && profile.age) {
+    const bmr = 10 * profile.weight + 6.25 * profile.height - 5 * profile.age - 78;
+    const activityMultiplier = { Beginner: 1.2, Intermediate: 1.375, Advanced: 1.55, Elite: 1.725 }[profile.fitness_level] || 1.2;
+    calorieTarget = Math.round(bmr * activityMultiplier);
+    proteinTarget = Math.round((calorieTarget * 0.3) / 4);
+    carbsTarget = Math.round((calorieTarget * 0.4) / 4);
+    fatTarget = Math.round((calorieTarget * 0.3) / 9);
+  }
+
+  // ---- Today's food totals ----
+  const todaysFoodTotals = db.prepare(`
+    SELECT COALESCE(SUM(calories),0) as calories, COALESCE(SUM(protein),0) as protein,
+           COALESCE(SUM(carbs),0) as carbs, COALESCE(SUM(fat),0) as fat
+    FROM food_logs WHERE user_id = ? AND date(logged_at) = date('now')
+  `).get(req.currentUserId);
+
+  const hasLoggedFoodToday = todaysFoodTotals.calories > 0;
+
+  // ---- Calories eaten, last 7 days (for the chart) ----
+  const last7Rows = db.prepare(`
+    SELECT date(logged_at) as d, COALESCE(SUM(calories),0) as total
+    FROM food_logs WHERE user_id = ? AND logged_at >= date('now', '-6 days')
+    GROUP BY d
+  `).all(req.currentUserId);
+  const byDate = Object.fromEntries(last7Rows.map(r => [r.d, Math.round(r.total)]));
+
+  const caloriesLast7Days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const iso = d.toISOString().slice(0, 10);
+    caloriesLast7Days.push({
+      label: DAY_NAMES[d.getDay()].slice(0, 3),
+      calories: byDate[iso] || 0
+    });
+  }
+
+  // ---- Rule-based recommendations (kept local/fast — no LLM call on every dashboard load) ----
+  const recommendations = [];
+  if (isRestToday) {
+    recommendations.push("Today's a recovery day — light stretching or a walk is enough.");
+  } else if (doneToday) {
+    recommendations.push(`Nice work — you already completed ${trainDay.name} today.`);
+  } else {
+    recommendations.push(`Today's session is ${trainDay.name} — get it done to stay on track this week.`);
+  }
+  if (!hasLoggedFoodToday) {
+    recommendations.push("You haven't logged any food today — add a meal to track your macros.");
+  } else if (calorieTarget && todaysFoodTotals.calories > calorieTarget) {
+    recommendations.push(`You're ${Math.round(todaysFoodTotals.calories - calorieTarget)} kcal over target today — keep the rest of today lighter.`);
+  }
+  if (workoutsThisWeek < WEEKLY_WORKOUT_TARGET) {
+    recommendations.push(`You've completed ${workoutsThisWeek}/${WEEKLY_WORKOUT_TARGET} workouts this week.`);
+  }
+  if (!latestWeightRow) {
+    recommendations.push('Log your current weight to start tracking progress toward your target.');
+  }
 
   res.json({
+    hasProfile: true,
     userName: user.name,
-    hasProfile: !!profile,
-    fitnessLevel: profile ? profile.fitness_level : null,
-    latestWeight: latestWeight ? latestWeight.weight : null,
-    targetWeight: profile ? profile.target_weight : null,
-    caloriesBurnedThisWeek: Math.round(cardioTotals.totalKcal),
-    workoutsThisWeek: workoutsThisWeek.count,
-    foodLoggedToday: Math.round(todaysFood.totalKcal)
+    sports,
+    goals,
+    fitnessLevel: profile.fitness_level,
+    currentWeight,
+    targetWeight: profile.target_weight,
+    workoutsThisWeek,
+    weeklyWorkoutTarget: WEEKLY_WORKOUT_TARGET,
+    todayWorkout: isRestToday ? null : { name: trainDay.name, icon: trainDay.icon, doneToday: !!doneToday },
+    isRestToday,
+    calorieTarget,
+    caloriesEatenToday: Math.round(todaysFoodTotals.calories),
+    hasLoggedFoodToday,
+    macros: {
+      protein: { consumed: Math.round(todaysFoodTotals.protein), target: proteinTarget },
+      carbs: { consumed: Math.round(todaysFoodTotals.carbs), target: carbsTarget },
+      fat: { consumed: Math.round(todaysFoodTotals.fat), target: fatTarget }
+    },
+    caloriesLast7Days,
+    recommendations: recommendations.slice(0, 4)
   });
 });
 

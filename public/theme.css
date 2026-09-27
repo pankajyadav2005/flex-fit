@@ -1,217 +1,205 @@
 /* theme.css
-   Load this AFTER style.css on every page:
+   Load AFTER style.css on every page:
      <link rel="stylesheet" href="style.css">
      <link rel="stylesheet" href="theme.css">
-   theme.js sets <html data-theme="light|dark">; these rules only apply under
-   [data-theme="dark"], so light mode is completely untouched (your existing style.css
-   still controls it as-is).
+   theme.js sets <html data-theme="light|dark"> (resolving "system" to whichever applies).
+   Everything below only applies under [data-theme="dark"], so light mode is
+   completely untouched — your existing style.css still controls it as-is.
 */
 
-/* ---------- Design tokens ---------- */
-:root {
-  --ff-bg: #faf6f0;
-  --ff-bg-alt: #ffffff;
-  --ff-text: #1a1a1a;
-  --ff-text-muted: #6b6b6b;
-  --ff-border: #e5e0da;
-  --ff-accent: #e8613c;      /* the orange used for primary buttons / active nav */
-  --ff-accent-text: #ffffff;
-  --ff-card-bg: #ffffff;
-  --ff-input-bg: #ffffff;
-  --ff-shadow: rgba(0, 0, 0, 0.05);
-}
-
 html[data-theme="dark"] {
-  --ff-bg: #0d0d0d;
-  --ff-bg-alt: #171717;
-  --ff-text: #f2f2f2;
-  --ff-text-muted: #a3a3a3;
-  --ff-border: #2e2e2e;
-  --ff-accent: #ffffff;      /* black & white theme: accent becomes white-on-black */
+  --ff-bg: #000000;
+  --ff-bg-alt: #0a0a0a;
+  --ff-card: #121212;
+  --ff-border: #2a2a2a;
+  --ff-text: #f5f5f5;
+  --ff-muted: #8a8a8a;
+  --ff-accent: #ffffff;       /* black & white theme: accent replaces the orange */
   --ff-accent-text: #000000;
-  --ff-card-bg: #171717;
-  --ff-input-bg: #101010;
-  --ff-shadow: rgba(0, 0, 0, 0.4);
-
+  --ff-accent-hover: #dcdcdc;
+  --ff-shadow: rgba(0, 0, 0, 0.6);
   color-scheme: dark;
 }
 
 /* ---------- Base ---------- */
-html[data-theme="dark"] body,
-html[data-theme="dark"] .main-content {
+html[data-theme="dark"] body {
   background: var(--ff-bg);
   color: var(--ff-text);
 }
 
-html[data-theme="dark"] h1,
-html[data-theme="dark"] h2,
-html[data-theme="dark"] h3,
-html[data-theme="dark"] strong {
-  color: var(--ff-text);
-}
-
-html[data-theme="dark"] .subtext,
-html[data-theme="dark"] .summary-label,
-html[data-theme="dark"] .sport-goals-count,
-html[data-theme="dark"] .day-workout-name + .summary-label {
-  color: var(--ff-text-muted);
-}
-
 /* ---------- Sidebar ---------- */
 html[data-theme="dark"] .sidebar {
-  background: var(--ff-bg-alt);
+  background: var(--ff-bg);
   border-right: 1px solid var(--ff-border);
 }
 
-html[data-theme="dark"] .sidebar-logo {
-  color: var(--ff-text);
-}
+html[data-theme="dark"] .sidebar-logo { color: var(--ff-text); }
 
-html[data-theme="dark"] .sidebar-nav a {
-  color: var(--ff-text-muted);
-}
-
-html[data-theme="dark"] .sidebar-nav a:hover {
-  background: var(--ff-border);
-  color: var(--ff-text);
-}
-
-html[data-theme="dark"] .sidebar-nav a.active,
-html[data-theme="dark"] .sidebar .active {
-  background: var(--ff-accent);
-  color: var(--ff-accent-text);
-}
+html[data-theme="dark"] .sidebar-nav a { color: var(--ff-muted); }
+html[data-theme="dark"] .sidebar-nav a:hover { background: var(--ff-border); color: var(--ff-text); }
+html[data-theme="dark"] .sidebar-nav a.active { background: var(--ff-accent); color: var(--ff-accent-text); }
 
 html[data-theme="dark"] .sidebar-signout,
-html[data-theme="dark"] #theme-toggle-btn {
-  color: var(--ff-text-muted);
-}
-
+html[data-theme="dark"] #theme-toggle-btn { color: var(--ff-muted); }
 html[data-theme="dark"] .sidebar-signout:hover,
-html[data-theme="dark"] #theme-toggle-btn:hover {
-  color: var(--ff-text);
-}
+html[data-theme="dark"] #theme-toggle-btn:hover { color: var(--ff-text); }
 
-/* ---------- Cards / panels ---------- */
+/* ---------- Step indicator (profile wizard) ---------- */
+html[data-theme="dark"] .step-indicator { color: var(--ff-muted); }
+html[data-theme="dark"] .step.active { color: var(--ff-text); }
+html[data-theme="dark"] .step-num { background: var(--ff-border); color: var(--ff-muted); }
+html[data-theme="dark"] .step.active .step-num { background: var(--ff-accent); color: var(--ff-accent-text); }
+html[data-theme="dark"] .step-line { background: var(--ff-border); }
+
+/* ---------- Card panel / generic surfaces ---------- */
 html[data-theme="dark"] .card-panel,
+html[data-theme="dark"] .auth-box,
+html[data-theme="dark"] .stat-card,
+html[data-theme="dark"] .chat-panel,
+html[data-theme="dark"] .modal-box,
 html[data-theme="dark"] .day-card,
 html[data-theme="dark"] .exercise-card,
-html[data-theme="dark"] .sport-card,
-html[data-theme="dark"] .fitness-card,
-html[data-theme="dark"] .panel-header,
-html[data-theme="dark"] [class$="-page"] > div > div {
-  background: var(--ff-card-bg);
+html[data-theme="dark"] .meal-slot,
+html[data-theme="dark"] .db-stat-card,
+html[data-theme="dark"] .coach-box {
+  background: var(--ff-card);
   border-color: var(--ff-border);
   box-shadow: 0 1px 3px var(--ff-shadow);
   color: var(--ff-text);
 }
 
-html[data-theme="dark"] .day-card,
-html[data-theme="dark"] .exercise-card,
-html[data-theme="dark"] .sport-card,
-html[data-theme="dark"] .fitness-card {
-  border: 1px solid var(--ff-border);
+html[data-theme="dark"] .panel-header h2,
+html[data-theme="dark"] .day-workout-name,
+html[data-theme="dark"] .stat-card h3 { color: var(--ff-text); }
+
+html[data-theme="dark"] .count-badge,
+html[data-theme="dark"] .subtext,
+html[data-theme="dark"] .sport-goals-count,
+html[data-theme="dark"] .summary-label,
+html[data-theme="dark"] .day-label,
+html[data-theme="dark"] .fitness-card p,
+html[data-theme="dark"] .field label,
+html[data-theme="dark"] .fitness-label,
+html[data-theme="dark"] .timer-activity-name,
+html[data-theme="dark"] .session-day-header,
+html[data-theme="dark"] .db-stat-label,
+html[data-theme="dark"] .how-to p,
+html[data-theme="dark"] .mini-tag {
+  color: var(--ff-muted);
 }
 
-html[data-theme="dark"] .day-card.today {
+/* ---------- Sport cards / fitness cards / goal pills ---------- */
+html[data-theme="dark"] .sport-card,
+html[data-theme="dark"] .fitness-card,
+html[data-theme="dark"] .goal-pill,
+html[data-theme="dark"] .field input,
+html[data-theme="dark"] .auth-box input,
+html[data-theme="dark"] .modal-box input,
+html[data-theme="dark"] #meal-modal select,
+html[data-theme="dark"] #meal-modal input,
+html[data-theme="dark"] .ai-input-row input,
+html[data-theme="dark"] #activity-search,
+html[data-theme="dark"] #exercise-search,
+html[data-theme="dark"] .chat-input-row input,
+html[data-theme="dark"] .suggested-prompts button,
+html[data-theme="dark"] .category-tab,
+html[data-theme="dark"] .btn-secondary {
+  background: var(--ff-bg-alt);
+  border-color: var(--ff-border);
+  color: var(--ff-text);
+}
+
+html[data-theme="dark"] .field input::placeholder,
+html[data-theme="dark"] .auth-box input::placeholder,
+html[data-theme="dark"] .chat-input-row input::placeholder,
+html[data-theme="dark"] #activity-search::placeholder,
+html[data-theme="dark"] #exercise-search::placeholder,
+html[data-theme="dark"] .ai-input-row input::placeholder {
+  color: var(--ff-muted);
+}
+
+html[data-theme="dark"] .sport-card:hover,
+html[data-theme="dark"] .fitness-card:hover,
+html[data-theme="dark"] .goal-pill:hover,
+html[data-theme="dark"] .suggested-prompts button:hover,
+html[data-theme="dark"] .db-quick-btn:hover {
   border-color: var(--ff-accent);
 }
 
 html[data-theme="dark"] .sport-card.selected,
 html[data-theme="dark"] .fitness-card.selected {
   border-color: var(--ff-accent);
-  background: color-mix(in srgb, var(--ff-accent) 12%, var(--ff-card-bg));
+  background: var(--ff-card);
 }
 
-/* ---------- Buttons ---------- */
-html[data-theme="dark"] .btn-primary,
-html[data-theme="dark"] .complete-btn {
-  background: var(--ff-accent);
-  color: var(--ff-accent-text);
-  border: none;
-}
-
-html[data-theme="dark"] .btn-primary:disabled,
-html[data-theme="dark"] .complete-btn:disabled {
-  opacity: 0.5;
-}
-
-html[data-theme="dark"] .btn-secondary {
-  background: var(--ff-card-bg);
-  color: var(--ff-text);
-  border: 1px solid var(--ff-border);
-}
-
-/* ---------- Tabs / pills / badges ---------- */
-html[data-theme="dark"] .category-tab {
-  background: var(--ff-card-bg);
-  color: var(--ff-text-muted);
-  border: 1px solid var(--ff-border);
-}
-
-html[data-theme="dark"] .category-tab.active {
+html[data-theme="dark"] .goal-pill.selected,
+html[data-theme="dark"] .category-tab.active,
+html[data-theme="dark"] .sidebar-nav a.active {
   background: var(--ff-accent);
   color: var(--ff-accent-text);
   border-color: var(--ff-accent);
 }
 
-html[data-theme="dark"] .mini-tag,
-html[data-theme="dark"] .goal-pill,
-html[data-theme="dark"] .count-badge {
-  background: var(--ff-border);
-  color: var(--ff-text);
-}
-
-html[data-theme="dark"] .goal-pill.selected {
+/* ---------- Buttons ---------- */
+html[data-theme="dark"] .btn-primary,
+html[data-theme="dark"] .auth-box button {
   background: var(--ff-accent);
   color: var(--ff-accent-text);
+  border: none;
 }
+html[data-theme="dark"] .btn-primary:hover { background: var(--ff-accent-hover); }
+html[data-theme="dark"] .complete-btn:disabled { background: #333333; color: #777777; }
 
-html[data-theme="dark"] .diff-badge {
-  background: var(--ff-border);
-  color: var(--ff-text);
-}
+html[data-theme="dark"] #profile-message,
+html[data-theme="dark"] #weight-message { color: var(--ff-text); }
 
+/* ---------- Badges (workout day cards) ---------- */
 html[data-theme="dark"] .today-badge,
 html[data-theme="dark"] .complete-badge {
-  background: var(--ff-accent);
-  color: var(--ff-accent-text);
-}
-
-/* ---------- Forms ---------- */
-html[data-theme="dark"] input,
-html[data-theme="dark"] textarea,
-html[data-theme="dark"] select {
-  background: var(--ff-input-bg);
-  color: var(--ff-text);
-  border: 1px solid var(--ff-border);
-}
-
-html[data-theme="dark"] input::placeholder {
-  color: var(--ff-text-muted);
-}
-
-/* ---------- Misc ---------- */
-html[data-theme="dark"] .how-to {
-  border-top: 1px solid var(--ff-border);
-}
-
-html[data-theme="dark"] .watch-demo-link,
-html[data-theme="dark"] .view-exercises-link,
-html[data-theme="dark"] a {
-  color: var(--ff-accent);
-}
-
-html[data-theme="dark"] .step-line {
-  background: var(--ff-border);
-}
-
-html[data-theme="dark"] .step .step-num {
   background: var(--ff-border);
   color: var(--ff-text);
 }
 
-html[data-theme="dark"] .step.active .step-num {
-  background: var(--ff-accent);
-  color: var(--ff-accent-text);
+html[data-theme="dark"] .day-card.today { border-color: var(--ff-accent); }
+
+html[data-theme="dark"] .view-exercises-link { color: var(--ff-text); }
+html[data-theme="dark"] .view-exercises-link:hover { color: var(--ff-accent); text-decoration: underline; }
+html[data-theme="dark"] .watch-demo-link { color: var(--ff-text); text-decoration: underline; }
+
+/* ---------- Difficulty badges (monochrome tiers instead of color-coded) ---------- */
+html[data-theme="dark"] .diff-beginner     { background: #1a1a1a; color: #cfcfcf; }
+html[data-theme="dark"] .diff-intermediate { background: #2a2a2a; color: #e5e5e5; }
+html[data-theme="dark"] .diff-advanced     { background: #ffffff; color: #000000; }
+
+html[data-theme="dark"] .how-to summary { color: var(--ff-text); }
+
+/* ---------- Modal overlay ---------- */
+html[data-theme="dark"] .modal-overlay { background: rgba(0, 0, 0, 0.75); }
+
+/* ---------- Jiya chat ---------- */
+html[data-theme="dark"] .chat-bubble.bot { background: var(--ff-border); color: var(--ff-text); }
+html[data-theme="dark"] .chat-bubble.user { background: var(--ff-accent); color: var(--ff-accent-text); }
+html[data-theme="dark"] .suggested-prompts,
+html[data-theme="dark"] .chat-input-row { border-top-color: var(--ff-border); }
+
+/* ---------- Cardio ---------- */
+html[data-theme="dark"] .timer-num,
+html[data-theme="dark"] .session-kcal,
+html[data-theme="dark"] .gps-status { color: var(--ff-text); }
+html[data-theme="dark"] .session-item { border-bottom-color: var(--ff-border); }
+html[data-theme="dark"] .session-day-header { border-bottom-color: var(--ff-border); }
+
+/* ---------- Food ---------- */
+html[data-theme="dark"] .macro-bar { background: var(--ff-bg-alt); }
+
+/* ---------- Dashboard ---------- */
+html[data-theme="dark"] .db-stat-icon { background: var(--ff-border) !important; }
+html[data-theme="dark"] .db-progress-track { background: var(--ff-border); }
+html[data-theme="dark"] .db-progress-fill { background: linear-gradient(90deg, #bfbfbf, #ffffff); }
+html[data-theme="dark"] .db-progress-fill.over { background: linear-gradient(90deg, #ffffff, #ffffff); }
+html[data-theme="dark"] .db-quick-btn {
+  background: var(--ff-bg-alt);
+  border-color: var(--ff-border);
+  color: var(--ff-text);
 }
+html[data-theme="dark"] .db-quick-btn:hover { background: var(--ff-card); }
