@@ -58,7 +58,10 @@
                   <div class="summary-label">minutes</div>
                 </div>
               </div>
-              <button class="btn-primary timer-btn" id="timer-btn" onclick="toggleTimer()">▶ Start</button>
+              <div class="button-row" style="gap:10px; justify-content:center;">
+                <button class="btn-primary timer-btn" id="timer-btn" onclick="toggleTimer()">▶ Start</button>
+                <button class="btn-secondary timer-btn hidden" id="stop-btn" onclick="stopSession()">■ Stop</button>
+              </div>
               <p class="subtext timer-meta" id="timer-meta">MET -- · body weight -- kg</p>
             </div>
 
@@ -90,7 +93,8 @@
     let userWeight = 70;
     let activeCategory = null;
 
-    let timerRunning = false;
+    // sessionState: 'idle' | 'running' | 'paused'
+    let sessionState = 'idle';
     let elapsedSeconds = 0;    // total clock time
     let movingSeconds = 0;     // time actually spent moving (GPS-confirmed)
     let timerInterval = null;
@@ -151,7 +155,7 @@
     }
 
     function selectActivity(activity) {
-      if (timerRunning) {
+      if (sessionState !== 'idle') {
         alert('Stop the current session before switching activities.');
         return;
       }
@@ -171,16 +175,48 @@
         return;
       }
 
-      if (!timerRunning) {
+      if (sessionState === 'idle') {
         startSession();
-      } else {
-        stopSession();
+      } else if (sessionState === 'running') {
+        pauseSession();
+      } else if (sessionState === 'paused') {
+        resumeSession();
       }
     }
 
     function startSession() {
-      timerRunning = true;
-      document.getElementById('timer-btn').textContent = '■ Stop';
+      sessionState = 'running';
+      document.getElementById('timer-btn').textContent = '⏸ Pause';
+      document.getElementById('stop-btn').classList.remove('hidden');
+
+      timerInterval = setInterval(() => {
+        elapsedSeconds++;
+        updateTimerDisplay();
+      }, 1000);
+
+      startGPS();
+    }
+
+    function pauseSession() {
+      sessionState = 'paused';
+      document.getElementById('timer-btn').textContent = '▶ Resume';
+
+      clearInterval(timerInterval);
+      timerInterval = null;
+
+      if (gpsWatchId !== null) {
+        navigator.geolocation.clearWatch(gpsWatchId);
+        gpsWatchId = null;
+      }
+      // Discard the last GPS fix so resuming doesn't compute a huge jump
+      // across the paused gap as movement.
+      lastPosition = null;
+      document.getElementById('gps-status').textContent = '⏸ Paused — GPS tracking stopped.';
+    }
+
+    function resumeSession() {
+      sessionState = 'running';
+      document.getElementById('timer-btn').textContent = '⏸ Pause';
 
       timerInterval = setInterval(() => {
         elapsedSeconds++;
@@ -250,9 +286,11 @@
     }
 
     function stopSession() {
-      timerRunning = false;
+      sessionState = 'idle';
       clearInterval(timerInterval);
+      timerInterval = null;
       document.getElementById('timer-btn').textContent = '▶ Start';
+      document.getElementById('stop-btn').classList.add('hidden');
 
       if (gpsWatchId !== null) {
         navigator.geolocation.clearWatch(gpsWatchId);
