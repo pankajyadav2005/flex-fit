@@ -1,57 +1,128 @@
-/* theme.css
+/* =========================================================
+   FlexFit AI - Theme CSS
    Load AFTER style.css on every page:
-     <link rel="stylesheet" href="style.css">
-     <link rel="stylesheet" href="theme.css">
-   theme.js sets <html data-theme="light|dark"> (resolving "system" to whichever applies).
-   Everything below only applies under [data-theme="dark"], so light mode is
-   completely untouched — your existing style.css still controls it as-is.
-*/
+
+   <link rel="stylesheet" href="style.css">
+   <link rel="stylesheet" href="theme.css">
+
+   theme.js sets:
+   <html data-theme="light">
+   or
+   <html data-theme="dark">
+
+   Light mode remains controlled by style.css.
+   Dark mode uses black/dark backgrounds with FlexFit orange accents.
+   ========================================================= */
+
+
+/* =========================================================
+   DARK THEME VARIABLES
+   ========================================================= */
 
 html[data-theme="dark"] {
   --ff-bg: #000000;
   --ff-bg-alt: #0a0a0a;
   --ff-card: #121212;
   --ff-border: #2a2a2a;
+
   --ff-text: #f5f5f5;
   --ff-muted: #8a8a8a;
-  --ff-accent: #ffffff;       /* black & white theme: accent replaces the orange */
-  --ff-accent-text: #000000;
-  --ff-accent-hover: #dcdcdc;
+
+  /* FlexFit Orange */
+  --ff-accent: #f15a3a;
+  --ff-accent-text: #ffffff;
+  --ff-accent-hover: #e64d2f;
+
   --ff-shadow: rgba(0, 0, 0, 0.6);
+
   color-scheme: dark;
 }
 
-/* ---------- Base ---------- */
+
+/* =========================================================
+   BASE
+   ========================================================= */
+
 html[data-theme="dark"] body {
   background: var(--ff-bg);
   color: var(--ff-text);
 }
 
-/* ---------- Sidebar ---------- */
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+
 html[data-theme="dark"] .sidebar {
   background: var(--ff-bg);
   border-right: 1px solid var(--ff-border);
 }
 
-html[data-theme="dark"] .sidebar-logo { color: var(--ff-text); }
+html[data-theme="dark"] .sidebar-logo {
+  color: var(--ff-text);
+}
 
-html[data-theme="dark"] .sidebar-nav a { color: var(--ff-muted); }
-html[data-theme="dark"] .sidebar-nav a:hover { background: var(--ff-border); color: var(--ff-text); }
-html[data-theme="dark"] .sidebar-nav a.active { background: var(--ff-accent); color: var(--ff-accent-text); }
+html[data-theme="dark"] .sidebar-nav a {
+  color: var(--ff-muted);
+}
+
+/* Sidebar hover */
+html[data-theme="dark"] .sidebar-nav a:hover {
+  background: rgba(241, 90, 58, 0.12);
+  color: var(--ff-accent);
+}
+
+/* Sidebar active item - ORANGE */
+html[data-theme="dark"] .sidebar-nav a.active {
+  background: var(--ff-accent);
+  color: #ffffff;
+}
+
+
+/* Sign out + Theme button */
 
 html[data-theme="dark"] .sidebar-signout,
-html[data-theme="dark"] #theme-toggle-btn { color: var(--ff-muted); }
+html[data-theme="dark"] #theme-toggle-btn {
+  color: var(--ff-muted);
+}
+
 html[data-theme="dark"] .sidebar-signout:hover,
-html[data-theme="dark"] #theme-toggle-btn:hover { color: var(--ff-text); }
+html[data-theme="dark"] #theme-toggle-btn:hover {
+  color: var(--ff-accent);
+}
 
-/* ---------- Step indicator (profile wizard) ---------- */
-html[data-theme="dark"] .step-indicator { color: var(--ff-muted); }
-html[data-theme="dark"] .step.active { color: var(--ff-text); }
-html[data-theme="dark"] .step-num { background: var(--ff-border); color: var(--ff-muted); }
-html[data-theme="dark"] .step.active .step-num { background: var(--ff-accent); color: var(--ff-accent-text); }
-html[data-theme="dark"] .step-line { background: var(--ff-border); }
 
-/* ---------- Card panel / generic surfaces ---------- */
+/* =========================================================
+   STEP INDICATOR - PROFILE
+   ========================================================= */
+
+html[data-theme="dark"] .step-indicator {
+  color: var(--ff-muted);
+}
+
+html[data-theme="dark"] .step.active {
+  color: var(--ff-accent);
+}
+
+html[data-theme="dark"] .step-num {
+  background: var(--ff-border);
+  color: var(--ff-muted);
+}
+
+html[data-theme="dark"] .step.active .step-num {
+  background: var(--ff-accent);
+  color: #ffffff;
+}
+
+html[data-theme="dark"] .step-line {
+  background: var(--ff-border);
+}
+
+
+/* =========================================================
+   CARD PANELS / GENERIC SURFACES
+   ========================================================= */
+
 html[data-theme="dark"] .card-panel,
 html[data-theme="dark"] .auth-box,
 html[data-theme="dark"] .stat-card,
@@ -70,7 +141,12 @@ html[data-theme="dark"] .coach-box {
 
 html[data-theme="dark"] .panel-header h2,
 html[data-theme="dark"] .day-workout-name,
-html[data-theme="dark"] .stat-card h3 { color: var(--ff-text); }
+html[data-theme="dark"] .stat-card h3 {
+  color: var(--ff-text);
+}
+
+
+/* Muted text */
 
 html[data-theme="dark"] .count-badge,
 html[data-theme="dark"] .subtext,
@@ -88,7 +164,11 @@ html[data-theme="dark"] .mini-tag {
   color: var(--ff-muted);
 }
 
-/* ---------- Sport cards / fitness cards / goal pills ---------- */
+
+/* =========================================================
+   SPORT CARDS / FITNESS CARDS / GOAL PILLS
+   ========================================================= */
+
 html[data-theme="dark"] .sport-card,
 html[data-theme="dark"] .fitness-card,
 html[data-theme="dark"] .goal-pill,
@@ -109,6 +189,9 @@ html[data-theme="dark"] .btn-secondary {
   color: var(--ff-text);
 }
 
+
+/* Placeholders */
+
 html[data-theme="dark"] .field input::placeholder,
 html[data-theme="dark"] .auth-box input::placeholder,
 html[data-theme="dark"] .chat-input-row input::placeholder,
@@ -118,6 +201,9 @@ html[data-theme="dark"] .ai-input-row input::placeholder {
   color: var(--ff-muted);
 }
 
+
+/* Hover states */
+
 html[data-theme="dark"] .sport-card:hover,
 html[data-theme="dark"] .fitness-card:hover,
 html[data-theme="dark"] .goal-pill:hover,
@@ -126,80 +212,343 @@ html[data-theme="dark"] .db-quick-btn:hover {
   border-color: var(--ff-accent);
 }
 
+
+/* Selected cards */
+
 html[data-theme="dark"] .sport-card.selected,
 html[data-theme="dark"] .fitness-card.selected {
   border-color: var(--ff-accent);
   background: var(--ff-card);
 }
 
+
+/* Selected pills / tabs / sidebar */
+
 html[data-theme="dark"] .goal-pill.selected,
 html[data-theme="dark"] .category-tab.active,
 html[data-theme="dark"] .sidebar-nav a.active {
   background: var(--ff-accent);
-  color: var(--ff-accent-text);
+  color: #ffffff;
   border-color: var(--ff-accent);
 }
 
-/* ---------- Buttons ---------- */
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
 html[data-theme="dark"] .btn-primary,
 html[data-theme="dark"] .auth-box button {
   background: var(--ff-accent);
-  color: var(--ff-accent-text);
+  color: #ffffff;
   border: none;
 }
-html[data-theme="dark"] .btn-primary:hover { background: var(--ff-accent-hover); }
-html[data-theme="dark"] .complete-btn:disabled { background: #333333; color: #777777; }
+
+
+/* Button hover */
+
+html[data-theme="dark"] .btn-primary:hover,
+html[data-theme="dark"] .auth-box button:hover {
+  background: var(--ff-accent-hover);
+}
+
+
+/* Disabled button */
+
+html[data-theme="dark"] .complete-btn:disabled {
+  background: #333333;
+  color: #777777;
+}
+
+
+/* Messages */
 
 html[data-theme="dark"] #profile-message,
-html[data-theme="dark"] #weight-message { color: var(--ff-text); }
+html[data-theme="dark"] #weight-message {
+  color: var(--ff-text);
+}
 
-/* ---------- Badges (workout day cards) ---------- */
+
+/* =========================================================
+   BADGES - WORKOUT DAY CARDS
+   ========================================================= */
+
 html[data-theme="dark"] .today-badge,
 html[data-theme="dark"] .complete-badge {
+  background: rgba(241, 90, 58, 0.15);
+  color: var(--ff-accent);
+  border: 1px solid rgba(241, 90, 58, 0.3);
+}
+
+
+/* Today card */
+
+html[data-theme="dark"] .day-card.today {
+  border-color: var(--ff-accent);
+}
+
+
+/* Links */
+
+html[data-theme="dark"] .view-exercises-link {
+  color: var(--ff-text);
+}
+
+html[data-theme="dark"] .view-exercises-link:hover {
+  color: var(--ff-accent);
+  text-decoration: underline;
+}
+
+html[data-theme="dark"] .watch-demo-link {
+  color: var(--ff-text);
+  text-decoration: underline;
+}
+
+html[data-theme="dark"] .watch-demo-link:hover {
+  color: var(--ff-accent);
+}
+
+
+/* =========================================================
+   DIFFICULTY BADGES
+   ========================================================= */
+
+html[data-theme="dark"] .diff-beginner {
+  background: rgba(241, 90, 58, 0.10);
+  color: #ff9a85;
+  border: 1px solid rgba(241, 90, 58, 0.25);
+}
+
+html[data-theme="dark"] .diff-intermediate {
+  background: rgba(241, 90, 58, 0.18);
+  color: #ff8068;
+  border: 1px solid rgba(241, 90, 58, 0.35);
+}
+
+html[data-theme="dark"] .diff-advanced {
+  background: var(--ff-accent);
+  color: #ffffff;
+}
+
+
+/* How-to */
+
+html[data-theme="dark"] .how-to summary {
+  color: var(--ff-text);
+}
+
+html[data-theme="dark"] .how-to summary:hover {
+  color: var(--ff-accent);
+}
+
+
+/* =========================================================
+   MODAL OVERLAY
+   ========================================================= */
+
+html[data-theme="dark"] .modal-overlay {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+
+/* =========================================================
+   JIYA AI CHAT
+   ========================================================= */
+
+html[data-theme="dark"] .chat-bubble.bot {
   background: var(--ff-border);
   color: var(--ff-text);
 }
 
-html[data-theme="dark"] .day-card.today { border-color: var(--ff-accent); }
+html[data-theme="dark"] .chat-bubble.user {
+  background: var(--ff-accent);
+  color: #ffffff;
+}
 
-html[data-theme="dark"] .view-exercises-link { color: var(--ff-text); }
-html[data-theme="dark"] .view-exercises-link:hover { color: var(--ff-accent); text-decoration: underline; }
-html[data-theme="dark"] .watch-demo-link { color: var(--ff-text); text-decoration: underline; }
-
-/* ---------- Difficulty badges (monochrome tiers instead of color-coded) ---------- */
-html[data-theme="dark"] .diff-beginner     { background: #1a1a1a; color: #cfcfcf; }
-html[data-theme="dark"] .diff-intermediate { background: #2a2a2a; color: #e5e5e5; }
-html[data-theme="dark"] .diff-advanced     { background: #ffffff; color: #000000; }
-
-html[data-theme="dark"] .how-to summary { color: var(--ff-text); }
-
-/* ---------- Modal overlay ---------- */
-html[data-theme="dark"] .modal-overlay { background: rgba(0, 0, 0, 0.75); }
-
-/* ---------- Jiya chat ---------- */
-html[data-theme="dark"] .chat-bubble.bot { background: var(--ff-border); color: var(--ff-text); }
-html[data-theme="dark"] .chat-bubble.user { background: var(--ff-accent); color: var(--ff-accent-text); }
 html[data-theme="dark"] .suggested-prompts,
-html[data-theme="dark"] .chat-input-row { border-top-color: var(--ff-border); }
+html[data-theme="dark"] .chat-input-row {
+  border-top-color: var(--ff-border);
+}
 
-/* ---------- Cardio ---------- */
+
+/* Jiya suggested prompt buttons */
+
+html[data-theme="dark"] .suggested-prompts button:hover {
+  background: rgba(241, 90, 58, 0.12);
+  color: var(--ff-accent);
+}
+
+
+/* =========================================================
+   CARDIO
+   ========================================================= */
+
 html[data-theme="dark"] .timer-num,
 html[data-theme="dark"] .session-kcal,
-html[data-theme="dark"] .gps-status { color: var(--ff-text); }
-html[data-theme="dark"] .session-item { border-bottom-color: var(--ff-border); }
-html[data-theme="dark"] .session-day-header { border-bottom-color: var(--ff-border); }
+html[data-theme="dark"] .gps-status {
+  color: var(--ff-accent);
+}
 
-/* ---------- Food ---------- */
-html[data-theme="dark"] .macro-bar { background: var(--ff-bg-alt); }
+html[data-theme="dark"] .session-item {
+  border-bottom-color: var(--ff-border);
+}
 
-/* ---------- Dashboard ---------- */
-html[data-theme="dark"] .db-stat-icon { background: var(--ff-border) !important; }
-html[data-theme="dark"] .db-progress-track { background: var(--ff-border); }
-html[data-theme="dark"] .db-progress-fill { background: linear-gradient(90deg, #bfbfbf, #ffffff); }
-html[data-theme="dark"] .db-progress-fill.over { background: linear-gradient(90deg, #ffffff, #ffffff); }
+html[data-theme="dark"] .session-day-header {
+  border-bottom-color: var(--ff-border);
+}
+
+
+/* =========================================================
+   FOOD
+   ========================================================= */
+
+html[data-theme="dark"] .macro-bar {
+  background: var(--ff-bg-alt);
+}
+
+
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+
+html[data-theme="dark"] .db-stat-icon {
+  background: rgba(241, 90, 58, 0.15) !important;
+  color: var(--ff-accent);
+}
+
+html[data-theme="dark"] .db-progress-track {
+  background: var(--ff-border);
+}
+
+
+/* Orange progress bar */
+
+html[data-theme="dark"] .db-progress-fill {
+  background: linear-gradient(
+    90deg,
+    #e64d2f,
+    #f15a3a
+  );
+}
+
+
+/* Orange when over target */
+
+html[data-theme="dark"] .db-progress-fill.over {
+  background: linear-gradient(
+    90deg,
+    #e64d2f,
+    #ff765c
+  );
+}
+
+
+/* Dashboard quick buttons */
+
 html[data-theme="dark"] .db-quick-btn {
   background: var(--ff-bg-alt);
   border-color: var(--ff-border);
   color: var(--ff-text);
 }
-html[data-theme="dark"] .db-quick-btn:hover { background: var(--ff-card); }
+
+html[data-theme="dark"] .db-quick-btn:hover {
+  background: rgba(241, 90, 58, 0.12);
+  border-color: var(--ff-accent);
+  color: var(--ff-accent);
+}
+
+
+/* =========================================================
+   FORM FOCUS
+   ========================================================= */
+
+html[data-theme="dark"] input:focus,
+html[data-theme="dark"] select:focus,
+html[data-theme="dark"] textarea:focus {
+  border-color: var(--ff-accent);
+  outline-color: var(--ff-accent);
+}
+
+
+/* =========================================================
+   CHECKBOX / RADIO / RANGE
+   ========================================================= */
+
+html[data-theme="dark"] input[type="checkbox"],
+html[data-theme="dark"] input[type="radio"],
+html[data-theme="dark"] input[type="range"] {
+  accent-color: var(--ff-accent);
+}
+
+
+/* =========================================================
+   GENERIC ACCENT ELEMENTS
+   ========================================================= */
+
+html[data-theme="dark"] .accent,
+html[data-theme="dark"] .text-accent {
+  color: var(--ff-accent);
+}
+
+html[data-theme="dark"] a:hover {
+  color: var(--ff-accent);
+}
+
+
+/* =========================================================
+   SELECTION
+   ========================================================= */
+
+html[data-theme="dark"] ::selection {
+  background: var(--ff-accent);
+  color: #ffffff;
+}
+
+
+/* =========================================================
+   ORANGE BORDERS FOR ACTIVE / SELECTED ELEMENTS
+   ========================================================= */
+
+html[data-theme="dark"] .active,
+html[data-theme="dark"] .selected {
+  border-color: var(--ff-accent);
+}
+
+
+/* =========================================================
+   THEME TOGGLE
+   ========================================================= */
+
+html[data-theme="dark"] #theme-toggle-btn:hover {
+  color: var(--ff-accent);
+}
+
+
+/* =========================================================
+   GLOBAL ORANGE ACCENT OVERRIDES
+   These make the FlexFit orange consistent across pages.
+   ========================================================= */
+
+html[data-theme="dark"] .primary,
+html[data-theme="dark"] .primary-btn,
+html[data-theme="dark"] .submit-btn,
+html[data-theme="dark"] .analyze-btn,
+html[data-theme="dark"] .send-btn {
+  background: var(--ff-accent);
+  color: #ffffff;
+  border-color: var(--ff-accent);
+}
+
+html[data-theme="dark"] .primary:hover,
+html[data-theme="dark"] .primary-btn:hover,
+html[data-theme="dark"] .submit-btn:hover,
+html[data-theme="dark"] .analyze-btn:hover,
+html[data-theme="dark"] .send-btn:hover {
+  background: var(--ff-accent-hover);
+  border-color: var(--ff-accent-hover);
+}
+
+
+/* =========================================================
+   END OF FLEXFIT THEME
+   ========================================================= */
