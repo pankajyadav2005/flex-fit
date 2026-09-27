@@ -5,7 +5,7 @@
 // "System" means: follow the OS/browser's prefers-color-scheme automatically.
 
 (function () {
-  const STORAGE_KEY = 'flexfit-theme'; // stored value is one of: 'system' | 'light' | 'dark'
+  const STORAGE_KEY = 'flexfit-theme';
   const ORDER = ['system', 'light', 'dark'];
   const LABELS = { system: 'Theme: System', light: 'Theme: Light', dark: 'Theme: Dark' };
 
@@ -59,10 +59,8 @@
     btn.textContent = LABELS[getMode()];
   }
 
-  // Apply saved mode immediately, before the rest of the page paints.
   applyMode(getMode());
 
-  // If the user is on "system" and the OS theme changes while the page is open, follow it live.
   media.addEventListener('change', () => {
     if (getMode() === 'system') applyMode('system');
   });
