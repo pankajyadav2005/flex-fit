@@ -548,6 +548,65 @@ html[data-theme="dark"] .send-btn:hover {
   border-color: var(--ff-accent-hover);
 }
 
+/* =========================================================
+   FIX WHITE STAT BOXES IN DARK MODE
+   ========================================================= */
+
+/* Cardio / Progress statistic boxes */
+html[data-theme="dark"] .session-stat,
+html[data-theme="dark"] .session-stat-card,
+html[data-theme="dark"] .history-stat,
+html[data-theme="dark"] .history-stat-card,
+html[data-theme="dark"] .summary-stat,
+html[data-theme="dark"] .summary-stat-card,
+html[data-theme="dark"] .progress-stat,
+html[data-theme="dark"] .progress-stat-card,
+html[data-theme="dark"] .stat-box,
+html[data-theme="dark"] .stat-item,
+html[data-theme="dark"] .summary-item {
+  background: var(--ff-card) !important;
+  color: var(--ff-text) !important;
+  border-color: var(--ff-border) !important;
+}
+
+/* Text inside those boxes */
+html[data-theme="dark"] .session-stat *,
+html[data-theme="dark"] .session-stat-card *,
+html[data-theme="dark"] .history-stat *,
+html[data-theme="dark"] .history-stat-card *,
+html[data-theme="dark"] .summary-stat *,
+html[data-theme="dark"] .summary-stat-card *,
+html[data-theme="dark"] .progress-stat *,
+html[data-theme="dark"] .progress-stat-card *,
+html[data-theme="dark"] .stat-box *,
+html[data-theme="dark"] .stat-item *,
+html[data-theme="dark"] .summary-item * {
+  color: inherit;
+}
+
+
+/* =========================================================
+   EXTRA CARD / STAT OVERRIDE
+   ========================================================= */
+
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .stat,
+html[data-theme="dark"] .summary-card,
+html[data-theme="dark"] .metric-card {
+  background: var(--ff-card) !important;
+  color: var(--ff-text) !important;
+  border-color: var(--ff-border) !important;
+}
+
+
+/* Orange numbers / important values */
+html[data-theme="dark"] .session-kcal,
+html[data-theme="dark"] .session-minutes,
+html[data-theme="dark"] .stat-value,
+html[data-theme="dark"] .summary-value,
+html[data-theme="dark"] .metric-value {
+  color: var(--ff-accent) !important;
+}
 
 /* =========================================================
    END OF FLEXFIT THEME
