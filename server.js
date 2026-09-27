@@ -282,12 +282,16 @@ Be thorough and granular. Identify EVERY visibly distinct food item separately �
 - Any raw salad or accompaniments — list each salad component SEPARATELY (e.g. "Cucumber slices", "Tomato slices", "Onion", "Lemon wedge") rather than grouping them as one "salad" or "vegetable" item.
 - Condiments — pickle/achar, chutney, papad — include these even if the portion is small.
 
+If the image does not clearly show a plate of food (e.g. it's blurry, empty, or shows something unrelated to food), return {"items": []} rather than guessing.
+
 Critical accuracy rule: if a dish is clearly COOKED with visible oil, ghee, or spices (a curry, sabzi, or stir-fry), estimate the nutrition for the FULL COOKED DISH — including the oil and seasoning — not just the raw main ingredient. A cooked paneer curry or vegetable sabzi has meaningfully more calories and fat than raw paneer or raw vegetables alone, because of the added oil/ghee used in cooking.
 
 For each item, if it closely matches one of these known foods, use that EXACT name: ${knownFoods}.
 If it doesn't closely match any of those (e.g. it's a specific curry, pickle, or papad not in that list), give your own best common food name and your own best estimate of calories, protein, carbs and fat per 100g for that food AS COOKED/SERVED, factoring in oil where relevant.
 
 Give a realistic estimated portion size in grams for each item based on typical plate proportions.
+
+Be CONCISE in your JSON output — short food names, no extra commentary, no explanations outside the JSON.
 
 Respond with ONLY valid JSON in this exact shape, no other text, no markdown fences:
 {"items": [{"food_name": "string", "estimated_grams": number, "calories_per_100g": number, "protein_per_100g": number, "carbs_per_100g": number, "fat_per_100g": number}]}`;
@@ -300,8 +304,8 @@ Respond with ONLY valid JSON in this exact shape, no other text, no markdown fen
         'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'qwen/qwen3.8-27b',
-        max_tokens: 1500,
+        model: 'qwen/qwen3.6-27b',
+        max_tokens: 800,
         temperature: 0,
         response_format: { type: 'json_object' },
         messages: [
@@ -319,6 +323,11 @@ Respond with ONLY valid JSON in this exact shape, no other text, no markdown fen
     if (!response.ok) {
       const errText = await response.text();
       console.error('Groq vision API error:', response.status, errText);
+
+      if (response.status === 429) {
+        return res.status(429).json({ error: 'Too many scans in a short time — please wait about a minute and try again.' });
+      }
+
       return res.status(502).json({ error: 'Food scan failed — please try again in a moment.' });
     }
 
@@ -330,7 +339,7 @@ Respond with ONLY valid JSON in this exact shape, no other text, no markdown fen
       parsed = JSON.parse(raw);
     } catch (e) {
       console.error('Failed to parse Groq vision JSON:', raw);
-      return res.status(502).json({ error: 'Could not read the scan results — please try again.' });
+      return res.status(502).json({ error: 'Could not read the scan results — please try again with a clearer photo of your plate.' });
     }
 
     const items = Array.isArray(parsed.items) ? parsed.items : [];
