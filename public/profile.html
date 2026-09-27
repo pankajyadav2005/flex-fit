@@ -257,7 +257,15 @@
         body: JSON.stringify(profile)
       });
       const data = await res.json();
-      document.getElementById('profile-message').textContent = data.message || data.error;
+
+      if (res.ok) {
+        document.getElementById('profile-message').textContent = data.message + ' Redirecting...';
+        setTimeout(() => {
+          window.location.href = '/dashboard.html';
+        }, 800);
+      } else {
+        document.getElementById('profile-message').textContent = data.error;
+      }
     }
 
     async function loadProfile() {
