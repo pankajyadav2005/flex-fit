@@ -270,6 +270,11 @@ app.post('/api/scan-food', requireLogin, async (req, res) => {
     return res.status(400).json({ error: 'No image provided' });
   }
 
+  if (!process.env.GROQ_API_KEY) {
+    console.error('GROQ_API_KEY is not set — cannot call the vision API.');
+    return res.status(500).json({ error: 'Food scanner is not configured on the server (missing GROQ_API_KEY).' });
+  }
+
   const imageMime = mimeType || 'image/jpeg';
   const dataUrl = `data:${imageMime};base64,${image}`;
   const knownFoods = FOOD_DATABASE.map(f => f.name).join(', ');
@@ -305,8 +310,8 @@ Respond with ONLY valid JSON in this exact shape, no other text, no markdown fen
         'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'qwen/qwen3.6-27b',
-        max_tokens: 800,
+        model: 'qwen/qwen3.8-27b', // current Groq vision model (qwen3.6-27b no longer supports image input)
+        max_completion_tokens: 800, // Groq's current param name; max_tokens is the deprecated alias
         temperature: 0,
         response_format: { type: 'json_object' },
         messages: [
@@ -327,6 +332,12 @@ Respond with ONLY valid JSON in this exact shape, no other text, no markdown fen
 
       if (response.status === 429) {
         return res.status(429).json({ error: 'Too many scans in a short time — please wait about a minute and try again.' });
+      }
+      if (response.status === 401) {
+        return res.status(502).json({ error: 'Food scanner auth failed — check that GROQ_API_KEY is set correctly on the server.' });
+      }
+      if (response.status === 400 || response.status === 404) {
+        return res.status(502).json({ error: 'Food scan request was rejected by the vision model — please try again.' });
       }
 
       return res.status(502).json({ error: 'Food scan failed — please try again in a moment.' });
@@ -506,7 +517,7 @@ Do not give medical diagnoses; suggest seeing a doctor for medical concerns.`;
       },
       body: JSON.stringify({
         model: 'openai/gpt-oss-20b',
-        max_tokens: 500,
+        max_completion_tokens: 500,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message }
