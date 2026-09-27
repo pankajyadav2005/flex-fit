@@ -389,10 +389,12 @@ Respond with ONLY valid JSON in this exact shape, no other text, no markdown fen
 });
 
 // GET workout template + this week's completion status
+// GET workout template + this week's completion status
 app.get('/api/workout', requireLogin, (req, res) => {
   const profile = db.prepare('SELECT * FROM profiles WHERE user_id = ?').get(req.currentUserId);
   const templateName = (profile && (profile.fitness_level === 'Advanced' || profile.fitness_level === 'Elite'))
     ? 'Push Pull Legs' : 'Full Body';
+  const sports = profile ? JSON.parse(profile.sports || '[]') : [];
 
   // Get completions from the last 7 days
   const completions = db.prepare(`
@@ -400,7 +402,7 @@ app.get('/api/workout', requireLogin, (req, res) => {
     WHERE user_id = ? AND logged_at >= date('now', '-7 days')
   `).all(req.currentUserId);
 
-  res.json({ templateName, completions });
+  res.json({ templateName, completions, sports });
 });
 
 // POST mark a workout as complete

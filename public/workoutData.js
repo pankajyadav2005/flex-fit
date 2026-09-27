@@ -115,3 +115,139 @@ const EXERCISE_LIBRARY = [
 ];
 
 const MUSCLE_GROUPS = ["Chest", "Back", "Shoulders", "Biceps", "Triceps", "Quads", "Hamstrings", "Glutes", "Core", "Calves", "Full Body"];
+
+// ============================================================
+// SPORT-SPECIFIC TRAINING PLANS
+// Each sport is mapped to a training "archetype" — a 4-day-a-week
+// split (Mon/Wed/Fri/Sat train, Tue/Thu/Sun rest) with 8 named
+// exercises per training day, tailored to that style of training.
+// ============================================================
+
+const SPORT_ARCHETYPE_LABELS = {
+  strength_physique: "strength & physique",
+  conditioning: "high-intensity conditioning",
+  endurance: "endurance",
+  speed_power: "speed & power",
+  combat: "combat & conditioning",
+  team_sports: "athletic performance",
+  mobility: "mobility & flow",
+  rotational_core: "rotational power",
+  general: "general fitness"
+};
+
+const SPORT_TO_ARCHETYPE = {
+  "Bodybuilding": "strength_physique",
+  "Powerlifting": "strength_physique",
+  "Calisthenics": "strength_physique",
+  "Gymnastics": "strength_physique",
+  "Rock Climbing": "strength_physique",
+
+  "CrossFit": "conditioning",
+  "Multi-Sport": "conditioning",
+
+  "Running": "endurance",
+  "Trail Running": "endurance",
+  "Cycling": "endurance",
+  "Mountain Biking": "endurance",
+  "Swimming": "endurance",
+  "Triathlon": "endurance",
+  "Hiking": "endurance",
+  "Water Sports": "endurance",
+  "Rowing": "endurance",
+
+  "Sprinting": "speed_power",
+  "Winter Sports": "speed_power",
+  "Skiing": "speed_power",
+  "Snowboarding": "speed_power",
+  "Skateboarding": "speed_power",
+  "Surfing": "speed_power",
+
+  "Martial Arts": "combat",
+  "Boxing": "combat",
+  "Kickboxing": "combat",
+  "Brazilian Jiu-Jitsu": "combat",
+  "Wrestling": "combat",
+
+  "Football": "team_sports",
+  "Basketball": "team_sports",
+  "Volleyball": "team_sports",
+  "Cricket": "team_sports",
+  "Baseball": "team_sports",
+  "Rugby": "team_sports",
+  "Hockey": "team_sports",
+  "Team Sports": "team_sports",
+  "Racquet Sports": "team_sports",
+
+  "Yoga": "mobility",
+  "Pilates": "mobility",
+  "Dance": "mobility",
+
+  "Golf": "rotational_core",
+  "Target Sports": "rotational_core",
+  "Equestrian": "rotational_core",
+
+  "General Fitness": "general"
+};
+
+function ex(name, sets, reps) {
+  return { name, sets, reps };
+}
+
+const ARCHETYPE_TEMPLATES = {
+
+  strength_physique: {
+    Monday:    { icon: "🔥", name: "Upper Push", exercises: [ex("Barbell Bench Press",4,"6-8"), ex("Overhead Press",3,"8-10"), ex("Incline Dumbbell Press",4,"8-10"), ex("Tricep Dips",3,"10-12"), ex("Lateral Raise",3,"12-15"), ex("Push-Up",3,"12-20"), ex("Cable Chest Fly",3,"12-15"), ex("Tricep Rope Pushdown",3,"12-15")] },
+    Wednesday: { icon: "💪", name: "Upper Pull", exercises: [ex("Pull-Up",4,"6-10"), ex("Bent-Over Barbell Row",4,"8-10"), ex("Lat Pulldown",3,"10-12"), ex("Barbell Bicep Curl",3,"10-12"), ex("Face Pull",3,"15-20"), ex("Hammer Curl",3,"10-12"), ex("Seated Cable Row",3,"10-12"), ex("Deadlift",4,"5-6")] },
+    Friday:    { icon: "🦵", name: "Legs", exercises: [ex("Barbell Back Squat",4,"6-8"), ex("Romanian Deadlift",3,"8-10"), ex("Leg Press",3,"10-12"), ex("Walking Lunges",3,"12 each leg"), ex("Leg Curl",3,"12-15"), ex("Standing Calf Raise",4,"15-20"), ex("Hip Thrust",3,"10-12"), ex("Leg Extension",3,"12-15")] },
+    Saturday:  { icon: "⚡", name: "Full Body Conditioning", exercises: [ex("Burpees",4,"12-15"), ex("Kettlebell Swing",4,"15-20"), ex("Mountain Climbers",3,"30 sec"), ex("Plank",3,"30-60 sec"), ex("Push-Up",3,"12-20"), ex("Goblet Squat",4,"10-12"), ex("Battle Ropes",4,"30 sec"), ex("Box Jump",4,"8")] }
+  },
+
+  conditioning: {
+    Monday:    { icon: "🔥", name: "Strength + Metcon", exercises: [ex("Barbell Back Squat",4,"6-8"), ex("Push-Up",3,"12-20"), ex("Pull-Up",4,"6-10"), ex("Kettlebell Swing",4,"15-20"), ex("Box Jump",4,"8"), ex("Wall Ball",4,"15"), ex("Burpees",4,"12-15"), ex("Plank",3,"30-60 sec")] },
+    Wednesday: { icon: "💪", name: "Power Day", exercises: [ex("Thruster",4,"10"), ex("Deadlift",4,"5-6"), ex("Overhead Press",3,"8-10"), ex("Battle Ropes",4,"30 sec"), ex("Mountain Climbers",3,"30 sec"), ex("Bicycle Crunch",3,"20"), ex("Jump Rope",3,"60 sec"), ex("Sled Push",4,"20m")] },
+    Friday:    { icon: "⚡", name: "Full Body Metcon", exercises: [ex("Burpees",4,"12-15"), ex("Kettlebell Swing",4,"15-20"), ex("Goblet Squat",4,"10-12"), ex("Push-Up",3,"12-20"), ex("Pull-Up",4,"6-10"), ex("Box Jump",4,"8"), ex("Wall Ball",4,"15"), ex("Plank",3,"30-60 sec")] },
+    Saturday:  { icon: "🔥", name: "Engine Day", exercises: [ex("Jump Rope",3,"60 sec"), ex("Battle Ropes",4,"30 sec"), ex("Mountain Climbers",3,"30 sec"), ex("Burpees",4,"12-15"), ex("Sled Push",4,"20m"), ex("Kettlebell Swing",4,"15-20"), ex("Box Jump",4,"8"), ex("Bicycle Crunch",3,"20")] }
+  },
+
+  endurance: {
+    Monday:    { icon: "🦵", name: "Strength Support (Lower)", exercises: [ex("Barbell Back Squat",4,"6-8"), ex("Romanian Deadlift",3,"8-10"), ex("Walking Lunges",3,"12 each leg"), ex("Standing Calf Raise",4,"15-20"), ex("Hip Thrust",3,"10-12"), ex("Plank",3,"30-60 sec"), ex("Leg Curl",3,"12-15"), ex("Glute Bridge",3,"15-20")] },
+    Wednesday: { icon: "💨", name: "Speed & Intervals", exercises: [ex("Interval Sprints",8,"200m"), ex("Strides",6,"80m"), ex("Hill Repeats",6,"1 hill"), ex("Plank",3,"30-60 sec"), ex("Bicycle Crunch",3,"20"), ex("Russian Twist",3,"20"), ex("Standing Calf Raise",4,"15-20"), ex("Jump Rope",3,"60 sec")] },
+    Friday:    { icon: "💪", name: "Upper Support + Core", exercises: [ex("Push-Up",3,"12-20"), ex("Pull-Up",4,"6-10"), ex("Overhead Press",3,"8-10"), ex("Plank",3,"30-60 sec"), ex("Russian Twist",3,"20"), ex("Face Pull",3,"15-20"), ex("Hanging Leg Raise",3,"10-15"), ex("Seated Cable Row",3,"10-12")] },
+    Saturday:  { icon: "🏃", name: "Long Endurance + Mobility", exercises: [ex("Tempo Run",1,"20-30 min"), ex("Walking Lunges",3,"12 each leg"), ex("Standing Calf Raise",4,"15-20"), ex("Plank",3,"30-60 sec"), ex("Glute Bridge",3,"15-20"), ex("Bicycle Crunch",3,"20"), ex("Hip Thrust",3,"10-12"), ex("Jump Rope",3,"60 sec")] }
+  },
+
+  speed_power: {
+    Monday:    { icon: "💥", name: "Lower Power & Plyo", exercises: [ex("Box Jump",4,"8"), ex("Barbell Back Squat",4,"6-8"), ex("Kettlebell Swing",4,"15-20"), ex("Bulgarian Split Squat",3,"10 each leg"), ex("Standing Calf Raise",4,"15-20"), ex("Walking Lunges",3,"12 each leg"), ex("Plank",3,"30-60 sec"), ex("Hip Thrust",3,"10-12")] },
+    Wednesday: { icon: "💨", name: "Sprint Mechanics", exercises: [ex("Interval Sprints",8,"100m"), ex("Strides",6,"80m"), ex("Hill Repeats",6,"1 hill"), ex("Box Jump",4,"8"), ex("Jump Rope",3,"60 sec"), ex("Russian Twist",3,"20"), ex("Plank",3,"30-60 sec"), ex("Bicycle Crunch",3,"20")] },
+    Friday:    { icon: "💪", name: "Upper Power", exercises: [ex("Overhead Press",3,"8-10"), ex("Push-Up",3,"12-20"), ex("Pull-Up",4,"6-10"), ex("Kettlebell Swing",4,"15-20"), ex("Face Pull",3,"15-20"), ex("Battle Ropes",4,"30 sec"), ex("Plank",3,"30-60 sec"), ex("Mountain Climbers",3,"30 sec")] },
+    Saturday:  { icon: "⚡", name: "Explosive Full Body", exercises: [ex("Burpees",4,"12-15"), ex("Box Jump",4,"8"), ex("Kettlebell Swing",4,"15-20"), ex("Thruster",4,"10"), ex("Jump Rope",3,"60 sec"), ex("Mountain Climbers",3,"30 sec"), ex("Wall Ball",4,"15"), ex("Plank",3,"30-60 sec")] }
+  },
+
+  combat: {
+    Monday:    { icon: "🥊", name: "Upper Power (Striking)", exercises: [ex("Barbell Bench Press",4,"6-8"), ex("Battle Ropes",4,"30 sec"), ex("Push-Up",3,"12-20"), ex("Pull-Up",4,"6-10"), ex("Face Pull",3,"15-20"), ex("Russian Twist",3,"20"), ex("Plank",3,"30-60 sec"), ex("Mountain Climbers",3,"30 sec")] },
+    Wednesday: { icon: "🤼", name: "Grip & Core (Grappling)", exercises: [ex("Deadlift",4,"5-6"), ex("Pull-Up",4,"6-10"), ex("Barbell Bicep Curl",3,"10-12"), ex("Plank",3,"30-60 sec"), ex("Hanging Leg Raise",3,"10-15"), ex("Russian Twist",3,"20"), ex("Kettlebell Swing",4,"15-20"), ex("Battle Ropes",4,"30 sec")] },
+    Friday:    { icon: "🦵", name: "Legs & Kick Power", exercises: [ex("Barbell Back Squat",4,"6-8"), ex("Walking Lunges",3,"12 each leg"), ex("Bulgarian Split Squat",3,"10 each leg"), ex("Standing Calf Raise",4,"15-20"), ex("Hip Thrust",3,"10-12"), ex("Box Jump",4,"8"), ex("Plank",3,"30-60 sec"), ex("Mountain Climbers",3,"30 sec")] },
+    Saturday:  { icon: "🔥", name: "Fight Conditioning", exercises: [ex("Burpees",4,"12-15"), ex("Jump Rope",3,"60 sec"), ex("Battle Ropes",4,"30 sec"), ex("Kettlebell Swing",4,"15-20"), ex("Mountain Climbers",3,"30 sec"), ex("Box Jump",4,"8"), ex("Plank",3,"30-60 sec"), ex("Bicycle Crunch",3,"20")] }
+  },
+
+  team_sports: {
+    Monday:    { icon: "🦵", name: "Lower Power & Agility", exercises: [ex("Barbell Back Squat",4,"6-8"), ex("Walking Lunges",3,"12 each leg"), ex("Bulgarian Split Squat",3,"10 each leg"), ex("Box Jump",4,"8"), ex("Standing Calf Raise",4,"15-20"), ex("Hip Thrust",3,"10-12"), ex("Plank",3,"30-60 sec"), ex("Glute Bridge",3,"15-20")] },
+    Wednesday: { icon: "💪", name: "Upper Power", exercises: [ex("Barbell Bench Press",4,"6-8"), ex("Pull-Up",4,"6-10"), ex("Overhead Press",3,"8-10"), ex("Face Pull",3,"15-20"), ex("Push-Up",3,"12-20"), ex("Seated Cable Row",3,"10-12"), ex("Plank",3,"30-60 sec"), ex("Russian Twist",3,"20")] },
+    Friday:    { icon: "💨", name: "Speed & Agility", exercises: [ex("Interval Sprints",8,"100m"), ex("Box Jump",4,"8"), ex("Jump Rope",3,"60 sec"), ex("Strides",6,"80m"), ex("Mountain Climbers",3,"30 sec"), ex("Bicycle Crunch",3,"20"), ex("Plank",3,"30-60 sec"), ex("Battle Ropes",4,"30 sec")] },
+    Saturday:  { icon: "⚡", name: "Match Conditioning", exercises: [ex("Burpees",4,"12-15"), ex("Kettlebell Swing",4,"15-20"), ex("Jump Rope",3,"60 sec"), ex("Mountain Climbers",3,"30 sec"), ex("Wall Ball",4,"15"), ex("Box Jump",4,"8"), ex("Plank",3,"30-60 sec"), ex("Bicycle Crunch",3,"20")] }
+  },
+
+  mobility: {
+    Monday:    { icon: "🩰", name: "Core Flow", exercises: [ex("The Hundred",1,"100 pumps"), ex("Roll-Up",3,"10"), ex("Single Leg Stretch",3,"10 each"), ex("Double Leg Stretch",3,"10"), ex("Swan Dive",3,"8"), ex("Plank",3,"30-60 sec"), ex("Bicycle Crunch",3,"20"), ex("Russian Twist",3,"20")] },
+    Wednesday: { icon: "🧘", name: "Yoga Strength Flow", exercises: [ex("Downward Dog",3,"45 sec"), ex("Warrior I",3,"30 sec each"), ex("Warrior II",3,"30 sec each"), ex("Chair Pose",3,"30 sec"), ex("Boat Pose",3,"20 sec"), ex("Plank",3,"30-60 sec"), ex("Standing Forward Fold",3,"45 sec"), ex("Tree Pose",3,"30 sec each")] },
+    Friday:    { icon: "🤸", name: "Mobility + Light Strength", exercises: [ex("Push-Up",3,"12-20"), ex("Glute Bridge",3,"15-20"), ex("Hip Thrust",3,"10-12"), ex("Standing Calf Raise",4,"15-20"), ex("Plank",3,"30-60 sec"), ex("Bicycle Crunch",3,"20"), ex("Russian Twist",3,"20"), ex("Walking Lunges",3,"12 each leg")] },
+    Saturday:  { icon: "💃", name: "Flow Cardio", exercises: [ex("Jump Rope",3,"60 sec"), ex("Bicycle Crunch",3,"20"), ex("Russian Twist",3,"20"), ex("Plank",3,"30-60 sec"), ex("Mountain Climbers",3,"30 sec"), ex("Glute Bridge",3,"15-20"), ex("Standing Calf Raise",4,"15-20"), ex("Walking Lunges",3,"12 each leg")] }
+  },
+
+  rotational_core: {
+    Monday:    { icon: "🎯", name: "Rotational Power", exercises: [ex("Cable Woodchopper",3,"12 each side"), ex("Russian Twist",3,"20"), ex("Kettlebell Swing",4,"15-20"), ex("Plank",3,"30-60 sec"), ex("Hip Thrust",3,"10-12"), ex("Standing Calf Raise",4,"15-20"), ex("Bicycle Crunch",3,"20"), ex("Glute Bridge",3,"15-20")] },
+    Wednesday: { icon: "🧍", name: "Core Stability", exercises: [ex("Plank",3,"30-60 sec"), ex("Hanging Leg Raise",3,"10-15"), ex("Russian Twist",3,"20"), ex("Ab Wheel Rollout",3,"8-12"), ex("Bicycle Crunch",3,"20"), ex("Glute Bridge",3,"15-20"), ex("Hip Thrust",3,"10-12"), ex("Standing Calf Raise",4,"15-20")] },
+    Friday:    { icon: "💪", name: "Upper Mobility & Strength", exercises: [ex("Face Pull",3,"15-20"), ex("Overhead Press",3,"8-10"), ex("Push-Up",3,"12-20"), ex("Pull-Up",4,"6-10"), ex("Seated Cable Row",3,"10-12"), ex("Plank",3,"30-60 sec"), ex("Russian Twist",3,"20"), ex("Bicycle Crunch",3,"20")] },
+    Saturday:  { icon: "⚖️", name: "Lower Stability & Balance", exercises: [ex("Bulgarian Split Squat",3,"10 each leg"), ex("Walking Lunges",3,"12 each leg"), ex("Standing Calf Raise",4,"15-20"), ex("Hip Thrust",3,"10-12"), ex("Glute Bridge",3,"15-20"), ex("Plank",3,"30-60 sec"), ex("Single-Leg Calf Raise",3,"12 each leg"), ex("Step-Up",3,"10 each leg")] }
+  }
+};
