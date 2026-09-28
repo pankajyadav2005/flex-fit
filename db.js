@@ -1,7 +1,19 @@
 const Database = require('better-sqlite3');
-const db = new Database('flexfit.db');
+const path = require('path');
 
-// Create the users table if it doesn't already exist
+// Use Render persistent disk when DB_PATH is set.
+// Otherwise use the local project folder.
+const dbDir = process.env.DB_PATH || '.';
+const dbPath = path.join(dbDir, 'flexfit.db');
+
+console.log('Using database:', dbPath);
+
+const db = new Database(dbPath);
+
+// Enable foreign keys
+db.pragma('foreign_keys = ON');
+
+// Users
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -12,6 +24,7 @@ db.exec(`
   )
 `);
 
+// Profiles
 db.exec(`
   CREATE TABLE IF NOT EXISTS profiles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -26,6 +39,8 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id)
   )
 `);
+
+// Weight logs
 db.exec(`
   CREATE TABLE IF NOT EXISTS weight_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,6 +50,8 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id)
   )
 `);
+
+// Cardio sessions
 db.exec(`
   CREATE TABLE IF NOT EXISTS cardio_sessions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -48,6 +65,8 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id)
   )
 `);
+
+// Food logs
 db.exec(`
   CREATE TABLE IF NOT EXISTS food_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,6 +81,8 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id)
   )
 `);
+
+// Workout logs
 db.exec(`
   CREATE TABLE IF NOT EXISTS workout_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -72,4 +93,5 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id)
   )
 `);
+
 module.exports = db;

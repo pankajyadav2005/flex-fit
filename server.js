@@ -13,9 +13,14 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));  // increased limit to allow base64 photo uploads
 app.use(express.static('public'));     // serves index.html, style.css, etc.
 app.use(session({
-  secret: 'flexfit-secret-key',        // used to sign the session cookie
+  secret: process.env.SESSION_SECRET || 'development-secret',
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 1000 * 60 * 60 * 24 * 7
+  }
 }));
 
 app.use(passport.initialize());
