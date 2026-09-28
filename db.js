@@ -1,5 +1,13 @@
+const path = require('path');
+const fs = require('fs');
 const Database = require('better-sqlite3');
-const db = new Database('flexfit.db');
+
+// Use a persistent disk path in production (mounted at /var/data on Render),
+// falling back to a local file for local development where no disk exists.
+const DATA_DIR = process.env.DATA_DIR || (fs.existsSync('/var/data') ? '/var/data' : __dirname);
+const DB_PATH = path.join(DATA_DIR, 'flexfit.db');
+
+const db = new Database(DB_PATH);
 
 // Create the users table if it doesn't already exist
 db.exec(`
@@ -72,5 +80,5 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id)
   )
 `);
-module.exports = db;
 
+module.exports = db;
